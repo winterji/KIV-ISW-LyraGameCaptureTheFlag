@@ -6,30 +6,40 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 
 ---
 
-## A. Chytřejší návratová cesta nositele vlajky (★)
+## A. Chytřejší realizace existujícího rozhodování (★)
 
-**Reference v knize:** [Kubík 2004, §1.4 — *Jiné architektury reaktivních agentů*]; konkrétně **architektura s výběrem akce** v §1.4.1.
+**Reference v knize:** [Kubík 2004, Kapitola 1.4 — *Jiné architektury reaktivních agentů*]; konkrétně **architektura s výběrem akce** v Kapitole 1.4.1.
+
+**Pojmy:** Reaktivní agent s rozšířenou bází představ. V Kubíkových termínech obohacujete `I` o další představy (př. poslední známé pozice nepřátel) a měníte `akce : P × I → A` tak, aby vybraný waypoint tyto představy reflektoval.
+
+### Varianta 1
 
 **Co:** Baseline nositel jde z nepřátelské základny domů přímkou. Nahraďte to cestou, která se pokud možno vyhýbá místům, kde je vidět z nepřátelských pozic.
-
-**Pojmy:** Reaktivní agent s rozšířenou bází představ. V Kubíkových termínech obohacujete `I` o další představy (poslední známé pozice nepřátel) a měníte `akce : P × I → A` tak, aby vybraný waypoint tyto představy reflektoval.
 
 **Doporučený přístup:** Udržujte na blackboardu seznam nedávno spatřených nepřátel. Použijte **EQS (Environment Query System)** ke generování kandidátských waypointů ohodnocených podle vzdálenosti k nejbližšímu známému nepříteli. Nahraďte přímé `MoveTo(OwnFlagBaseLocation)` sekvencí volání `MoveTo(EQS-vybraný waypoint)`.
 
 **Definice hotovo:** Přes 10 zápasů by nositel měl přežít cestu domů častěji než baseline. Změřte to.
 
+### Varianta 2
+
+**Co:** Baseline agent střílí a zároveň se pohybuje, což zvyšuje rozptyl zbraně. Lyra respektuje pohybový stav postavy — skrčený agent míří přesněji. Naučte agenta skrčit se, když má přímou viditelnost na nepřítele, a vstát, jakmile potřebuje běžet.
+
+**Doporučený přístup:** Přidejte BT service nebo task k boji, který volá `GetControlledPawn → Crouch()` / `UnCrouch()` podle toho, zda agent vidí nepřítele. Pozor na to, co se stane se skrčenou polohou, když BT přejde na jiné chování.
+
+**Definice hotovo:** V kontrolovaném testu (bot vs. bot, statická pozice, stejná vzdálenost) změřte poměr zásahů (hits / shots fired) nebo time-to-kill. Skrčený agent by měl ukázat měřitelně vyšší přesnost v přestřelkách na místě. Writeup musí diskutovat trade-off: kdy se skrčení vyplatí a kdy ne.
+
 ---
 
 ## B. Přidělování rolí v týmu (★★)
 
-**Reference v knize:** [Kubík 2004, §4.2 — *Koordinace*] (centralizovaná vs. decentralizovaná koordinace); a §4.3.2 — *Kontraktační síť* (Smith 1980), pokud chcete čistě decentralizovanou formulaci.
+**Reference v knize:** [Kubík 2004, Kapitola 4.2 — *Koordinace*] (centralizovaná vs. decentralizovaná koordinace); a Kapitola 4.3.2 — *Kontraktační síť* (Smith 1980), pokud chcete čistě decentralizovanou formulaci.
 
 **Co:** Teď jsou všichni boti identičtí. Všichni se snaží krást, všichni bránit. Implementujte koordinaci tak, aby se tým rozdělil: např. dva útočníci, dva obránci, jeden flex.
 
 **Pojmy:** Multiagentové systémy. **Koordinace** mezi agenty. Můžete si vybrat:
 
-- **Centralizovaná (přímý dozor)** — jeden koordinátor přiřazuje role. Jednoduché a předvídatelné. Mapuje se přímo na Mintzbergův *direct supervision* z §4.2.
-- **Decentralizovaná (kontraktační síť)** — boti dávají nabídky na role, jakmile se otevřou. Blíž ke Smithovi [Kubík 2004, §4.3.2]. Více práce, ale mnohem bohatší writeup.
+- **Centralizovaná (přímý dozor)** — jeden koordinátor přiřazuje role. Jednoduché a předvídatelné. Mapuje se přímo na Mintzbergův *direct supervision* z Kapitoly 4.2.
+- **Decentralizovaná (kontraktační síť)** — boti dávají nabídky na role, jakmile se otevřou. Blíž ke Smithovi [Kubík 2004, Kapitola 4.3.2]. Více práce, ale mnohem bohatší writeup.
 
 **Doporučený přístup:** Přidejte server-side aktor „koordinátor týmu" (`WorldSubsystem` nebo manager aktor v experience). V `BeginPlay` controlleru se každý bot zaregistruje a dostane roli zapsanou do nového BB klíče `MyRole` (enum). Root selector BT se větví podle `MyRole`.
 
@@ -37,23 +47,9 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 
 ---
 
-## C. Vědomí munice a zdrojů (★★)
+## C. Obranná pozice u podstavce vlajky (★★)
 
-**Reference v knize:** [Kubík 2004, §1.2 — *Čistě reaktivní agent*] pro formální model; `OutOfAmmo` je další dimenze množiny vnitřních stavů `I`.
-
-**Co:** BB klíč `OutOfAmmo` už existuje, ale nikdo ho nepoužívá. Udělejte, aby agent přestal střílet, když má málo munice, stáhl se na bezpečnější pozici a zapojil se zpět, jakmile doplnil (Lyra má na většině map zbraňové pickupy).
-
-**Pojmy:** Vnitřní stav přesahující polohové představy. Výběr cíle řízený zdrojovými omezeními. V reaktivním nastavení je to pořád čistě `akce : P × I → A`; v deliberativním nastavení (projekt E níže) byste re-rankovali cíle, když dojde munice.
-
-**Doporučený přístup:** Přihlaste se na Lyra eventy munice (hledejte broadcast v `LyraEquipmentManagerComponent`). Nastavujte `OutOfAmmo` odtamtud. Přidejte novou top-level BT větev s vyšší dekorátor prioritou: `[OutOfAmmo == true] → MoveTo(nejbližší zbraňový pickup)`.
-
-**Definice hotovo:** Bot uprostřed přestřelky, kterému dojde munice, se viditelně stáhne, doplní a vrátí — a přežije víc soubojů než baseline.
-
----
-
-## D. Obranná pozice u podstavce vlajky (★★)
-
-**Reference v knize:** [Kubík 2004, §2.3 — *Mapa prostředí*] a §2.5 — *Cílově orientovaná navigace*. Mataricin robot Toto je kanonickou referencí pro agenta, který staví prostorovou reprezentaci a podle ní pak naviguje.
+**Reference v knize:** [Kubík 2004, Kapitola 2.3 — *Mapa prostředí*] a Kapitola 2.5 — *Cílově orientovaná navigace*. Mataricin robot Toto je kanonickou referencí pro agenta, který staví prostorovou reprezentaci a podle ní pak naviguje.
 
 **Co:** Když ještě nikdo neukradl vlajku, obránce by neměl stát na podstavci — měl by být blízko, v krytu, s výhledy na nájezdové cesty.
 
@@ -65,9 +61,9 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 
 ---
 
-## E. Deliberativní agent řízený cíli (★★★)
+## D. Deliberativní agent řízený cíli (★★★)
 
-**Reference v knize:** [Kubík 2004, §2 — *Uvažující agent*], obzvlášť §2.7–§2.9 (teorie BDI: **Představa – Touha – Záměr**). Volitelně §2.10 — architektura IRMA jako implementační reference.
+**Reference v knize:** [Kubík 2004, Kapitola 2 — *Uvažující agent*], obzvlášť Kapitoly 2.7–2.9 (teorie BDI: **Představa – Touha – Záměr**). Volitelně Kapitola 2.10 — architektura IRMA jako implementační reference.
 
 **Co:** Nahraďte root selector BT mechanismem výběru cíle, který vybírá z množiny explicitních cílů — např. `StealFlag`, `RecoverFlag`, `ProtectBase`, `KillCarrier`, `Restock` — tak, že každý ohodnotí proti aktuálním představám. Pak dispatch do sub-BT pro vybraný cíl.
 
@@ -79,23 +75,9 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 
 ---
 
-## F. Modelování ostatních agentů — predikce cesty nositele (★★★)
+## F. Úplné nahrazení BT jinou architekturou (★★★★)
 
-**Reference v knize:** [Kubík 2004, §2.8 — *Teorie intencionálních systémů*]. Dennettův **intencionální postoj** — přisouzení představ a cílů jinému agentovi za účelem predikce jeho chování.
-
-**Co:** Když je naše vlajka ukradena, recovery větev pronásleduje nositele reaktivně. Postavte agenta, který *predikuje*, kam nositel jde (skoro vždy: domácí základna, pravděpodobnou cestou), a místo pronásledování ho přepadne.
-
-**Pojmy:** Modelování mentálních stavů jiného agenta (ve smyslu §2.8). Berete nepřátelského nositele jako *intencionální systém* se známým cílem a dovozujete jeho pravděpodobné akce z toho.
-
-**Doporučený přístup:** Berte nositele jako známého agenta se známým cílem (jeho vlastní základna). Generujte pravděpodobné cesty (přes UE NavMesh A*, nebo samplujte několik plausibilních cest přes EQS). Spočítejte intercept waypoint, zapište ho do `MoveGoal`, a směrujte se tam místo `MoveTo(FlagCarrier)`.
-
-**Definice hotovo:** Když lidský nositel záměrně volí méně přímou cestu, predikční agent by někdy měl hádat špatně — to je dobře. Cílem je být *v průměru lepší*, ne vždy správně.
-
----
-
-## G. Úplné nahrazení BT jinou architekturou (★★★★)
-
-**Reference v knize:** [Kubík 2004, §3.2 — *Hybridní agent*]; konkrétně architektura **InteRRaP** (Müller 1996) z §3.2.1, s jejími vrstvami reaktivního / lokálního plánovacího / kooperativního plánovacího chování a jejich `řídicími cykly`.
+**Reference v knize:** [Kubík 2004, Kapitola 3.2 — *Hybridní agent*]; konkrétně architektura **InteRRaP** (Müller 1996) z Kapitoly 3.2.1, s jejími vrstvami reaktivního / lokálního plánovacího / kooperativního plánovacího chování a jejich `řídicími cykly`.
 
 **Co:** Postavte controller od nuly (podědíte `LyraPlayerBotController`), který používá jinou rozhodovací architekturu — vrstvený hybrid v duchu InteRRaP, konečný automat, nebo malý GOAP planner. Spusťte ho head-to-head proti BT-based baseline.
 
@@ -111,7 +93,7 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 
 Pro libovolnou ze zadání očekávejte odevzdat:
 
-1. **Implementaci** ve feature větvi / samostatné složce pod `Content/Bot/Student_<jmeno>/`.
+1. **Implementaci** v `Content/Bot/Student_<jmeno>/` — child Blueprint od `B_ISW_AI` plus vlastní Behavior Tree a podpůrné assety.
 2. **Krátký writeup** (pár stran) popisující návrh agenta **v Kubíkově terminologii** — jasně identifikujte, ke kterým sekcím knihy se vaše architektura vztahuje, kde se odchyluje a proč.
 3. **Záznam dema** agenta v akci proti baseline.
 
@@ -124,7 +106,7 @@ Přibližně v sestupném pořadí důležitosti:
 1. **Korektnost.** Váš agent dělá to, co váš návrh říká, že má dělat — ověřitelné v gameplay debuggeru.
 2. **Zdůvodněný návrh.** Vaše volby se čistě mapují na pojmy z Kubíka. Můžete vysvětlit *proč* jste vybrali tu architekturu, s citací příslušných sekcí, ne jenom *co* dělá.
 3. **Důkaz.** Nějaká kvantitativní evaluace, byť neformální. „Vyhraje 7/10 zápasů" je lepší než „cítí se silnější".
-4. **Hygiena kódu.** Držte se vzorů z [06 — Rozšiřování AI](06-Extending-the-AI.md). Nelepte svou logiku do existujících assetů; subclassujte nebo forkujte.
+4. **Hygiena kódu.** Držte se vzorů z [06 — Rozšiřování AI](06-Extending-the-AI.md). Dědíte od `B_ISW_AI` — sdílené baseline assety přímo neupravujte.
 5. **Polish.** Stretch goals jako hezčí chování, animace nebo koordinovaná týmová hra se cení, ale nejsou nutné.
 
-Přečtěte si alespoň jeden projekt spolužáka na konci semestru — porovnávat různé architektury agentů na stejné hře je součástí učení [Kubík 2004, §3.2].
+Přečtěte si alespoň jeden projekt spolužáka na konci semestru — porovnávat různé architektury agentů na stejné hře je součástí učení [Kubík 2004, Kapitola 3.2].

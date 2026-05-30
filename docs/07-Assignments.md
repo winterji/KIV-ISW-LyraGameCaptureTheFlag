@@ -8,7 +8,7 @@ Difficulty: ★ easy, ★★ moderate, ★★★ hard, ★★★★ ambitious.
 
 ## A. Smarter return path for the flag carrier (★)
 
-**Book reference:** [Kubík 2004, §1.4 — *Jiné architektury reaktivních agentů*]; specifically the **architektura s výběrem akce** in §1.4.1.
+**Book reference:** [Kubík 2004, Chapter 1.4 — *Jiné architektury reaktivních agentů*]; specifically the **architektura s výběrem akce** in Chapter 1.4.1.
 
 **What:** The baseline carrier walks in a straight line from the enemy base to its own base. Replace this with a path that avoids being seen by enemy positions where possible.
 
@@ -22,14 +22,14 @@ Difficulty: ★ easy, ★★ moderate, ★★★ hard, ★★★★ ambitious.
 
 ## B. Role assignment across the team (★★)
 
-**Book reference:** [Kubík 2004, §4.2 — *Koordinace*] (centralized vs. decentralized coordination); and §4.3.2 — *Kontraktační síť* / contract net protocol (Smith 1980) if you want a clean decentralized formulation.
+**Book reference:** [Kubík 2004, Chapter 4.2 — *Koordinace*] (centralized vs. decentralized coordination); and Chapter 4.3.2 — *Kontraktační síť* / contract net protocol (Smith 1980) if you want a clean decentralized formulation.
 
 **What:** Right now, every bot is identical. They all try to steal, they all defend. Implement a coordination mechanism so the team distributes itself: e.g., two attackers, two defenders, one flex.
 
 **Concepts:** Multi-agent systems. **Koordinace** between agents. You may pick:
 
-- **Centralized (přímý dozor)** — a single coordinator actor assigns roles. Simple and predictable. Maps directly onto Mintzberg's *direct supervision* discussed in §4.2.
-- **Decentralized (kontraktační síť)** — bots bid for roles when openings appear. Closer to Smith's contract net [Kubík 2004, §4.3.2]. More work but a much richer write-up.
+- **Centralized (přímý dozor)** — a single coordinator actor assigns roles. Simple and predictable. Maps directly onto Mintzberg's *direct supervision* discussed in Chapter 4.2.
+- **Decentralized (kontraktační síť)** — bots bid for roles when openings appear. Closer to Smith's contract net [Kubík 2004, Chapter 4.3.2]. More work but a much richer write-up.
 
 **Suggested approach:** Add a server-side "team coordinator" actor (a `WorldSubsystem` or a manager actor in the experience). On controller `BeginPlay`, each bot registers and gets a role written to a new BB key `MyRole` (enum). The BT's root selector branches on `MyRole`.
 
@@ -39,7 +39,7 @@ Difficulty: ★ easy, ★★ moderate, ★★★ hard, ★★★★ ambitious.
 
 ## C. Ammo and resource awareness (★★)
 
-**Book reference:** [Kubík 2004, §1.2 — *Čistě reaktivní agent*] for the formal model; the `OutOfAmmo` flag is one more dimension of the internal state set `I`.
+**Book reference:** [Kubík 2004, Chapter 1.2 — *Čistě reaktivní agent*] for the formal model; the `OutOfAmmo` flag is one more dimension of the internal state set `I`.
 
 **What:** The `OutOfAmmo` BB key already exists but is unused. Make the agent stop firing when low on ammo, retreat to a safer position, and re-engage when it has restocked (Lyra has weapon pickups on most maps).
 
@@ -53,7 +53,7 @@ Difficulty: ★ easy, ★★ moderate, ★★★ hard, ★★★★ ambitious.
 
 ## D. Defensive positioning around a flag pad (★★)
 
-**Book reference:** [Kubík 2004, §2.3 — *Mapa prostředí*] and §2.5 — *Cílově orientovaná navigace*. Mataric's Robot Toto is the canonical reference for an agent that builds a spatial representation it then navigates against.
+**Book reference:** [Kubík 2004, Chapter 2.3 — *Mapa prostředí*] and Chapter 2.5 — *Cílově orientovaná navigace*. Mataric's Robot Toto is the canonical reference for an agent that builds a spatial representation it then navigates against.
 
 **What:** When no flag has been stolen yet, a defender should not be standing on the flag pad — it should be near it, in cover, with sight lines on approaches.
 
@@ -67,7 +67,7 @@ Difficulty: ★ easy, ★★ moderate, ★★★ hard, ★★★★ ambitious.
 
 ## E. Goal-driven deliberative agent (★★★)
 
-**Book reference:** [Kubík 2004, §2 — *Uvažující agent*], especially §2.7–§2.9 (BDI theory: **Představa – Touha – Záměr**). Optionally §2.10 — IRMA architecture for an implementation reference.
+**Book reference:** [Kubík 2004, Chapter 2 — *Uvažující agent*], especially Chapters 2.7–2.9 (BDI theory: **Představa – Touha – Záměr**). Optionally Chapter 2.10 — IRMA architecture for an implementation reference.
 
 **What:** Replace the BT's root selector with a goal-selection mechanism that picks from a set of explicit goals — e.g. `StealFlag`, `RecoverFlag`, `ProtectBase`, `KillCarrier`, `Restock` — by scoring each one against current beliefs. Then dispatch into a sub-BT for the chosen goal.
 
@@ -81,11 +81,11 @@ Difficulty: ★ easy, ★★ moderate, ★★★ hard, ★★★★ ambitious.
 
 ## F. Modeling other agents — predicting the carrier's path (★★★)
 
-**Book reference:** [Kubík 2004, §2.8 — *Teorie intencionálních systémů*]. Dennett's **intencionální postoj** (intentional stance) — attributing beliefs and goals to another agent in order to predict its behavior.
+**Book reference:** [Kubík 2004, Chapter 2.8 — *Teorie intencionálních systémů*]. Dennett's **intencionální postoj** (intentional stance) — attributing beliefs and goals to another agent in order to predict its behavior.
 
 **What:** When our flag is stolen, the recovery branch chases the carrier reactively. Build an agent that *predicts* where the carrier is going (almost always: the enemy base, via likely routes) and ambushes them instead.
 
-**Concepts:** Modeling another agent's mental states (in the sense of §2.8). You are treating the enemy carrier as an *intentional system* with a known goal and inferring their likely actions from it.
+**Concepts:** Modeling another agent's mental states (in the sense of Chapter 2.8). You are treating the enemy carrier as an *intentional system* with a known goal and inferring their likely actions from it.
 
 **Suggested approach:** Treat the carrier as a known agent with a known goal (their own base). Generate likely paths (via UE's NavMesh A*, or sample several plausible routes via EQS). Compute an intercept waypoint, write it to `MoveGoal`, and route there instead of `MoveTo(FlagCarrier)`.
 
@@ -95,7 +95,7 @@ Difficulty: ★ easy, ★★ moderate, ★★★ hard, ★★★★ ambitious.
 
 ## G. Replace the BT entirely with a different architecture (★★★★)
 
-**Book reference:** [Kubík 2004, §3.2 — *Hybridní agent*]; specifically the **InteRRaP** architecture (Müller 1996) discussed in §3.2.1, with its reactive / local-planning / cooperative-planning layers and their `řídicí cykly`.
+**Book reference:** [Kubík 2004, Chapter 3.2 — *Hybridní agent*]; specifically the **InteRRaP** architecture (Müller 1996) discussed in Chapter 3.2.1, with its reactive / local-planning / cooperative-planning layers and their `řídicí cykly`.
 
 **What:** Build a controller from scratch (subclassing `LyraPlayerBotController`) that uses a different decision-making architecture — a layered hybrid in the spirit of InteRRaP, a finite-state machine, or a small GOAP planner. Run it head-to-head with the BT-based baseline.
 
@@ -111,7 +111,7 @@ Difficulty: ★ easy, ★★ moderate, ★★★ hard, ★★★★ ambitious.
 
 For any of these, expect to deliver:
 
-1. **The implementation**, in a feature branch / separate folder under `Content/Bot/Student_<yourname>/`.
+1. **The implementation** in `Content/Bot/Student_<yourname>/` — a child Blueprint of `B_ISW_AI` plus your own Behavior Tree and any supporting assets.
 2. **A short writeup** (a few pages) describing the agent design **in Kubík's terminology** — clearly identify which sections of the book your architecture corresponds to, where it deviates, and why.
 3. **A demo recording** of the agent in action against the baseline.
 
@@ -124,7 +124,7 @@ In approximately decreasing order of importance:
 1. **Correctness.** Your agent does what your design says it should do — verifiable in the gameplay debugger.
 2. **Justified design.** Your choices map cleanly onto agent concepts from Kubík. You can explain *why* you chose the architecture you did, citing the relevant sections, not just *what* it does.
 3. **Evidence.** Some quantitative evaluation, however informal. "Wins 7/10 matches" beats "feels stronger".
-4. **Code hygiene.** Follow the patterns in [06 — Extending the AI](06-Extending-the-AI.md). Don't paste your logic into the existing assets; subclass or fork.
+4. **Code hygiene.** Follow the patterns in [06 — Extending the AI](06-Extending-the-AI.md). Inherit from `B_ISW_AI` — do not edit the shared baseline assets directly.
 5. **Polish.** Stretch goals like nicer behavior, animation, or coordinated team play are appreciated but not required.
 
-Read at least one classmate's project at the end of term — comparing different agent architectures on the same game is part of the learning [Kubík 2004, §3.2].
+Read at least one classmate's project at the end of term — comparing different agent architectures on the same game is part of the learning [Kubík 2004, Chapter 3.2].

@@ -54,21 +54,109 @@ Use the [worked example](05-Example-Elimination-Listener.md) as a template. Summ
 - Guard with `IsValid(BBComp)` before any blackboard access.
 - Update beliefs, not behavior. Don't drive `MoveTo` from inside a message handler.
 
-## Replacing the existing controller
+## Creating your own controller
 
-If your assignment calls for a different agent architecture — a BDI-style deliberative agent [Kubík 2004, §2.9], an InteRRaP-style hybrid [Kubík 2004, §3.2.1], a utility-based selector, etc. — you have two options:
+Your agent is a **child Blueprint of `B_ISW_AI`** — do not edit `B_ISW_AI` directly. It is the shared baseline that all students build on top of.
 
-**Option A — Subclass `B_ISW_AI`.** Inherit, override `OnPossess`, leave the lifecycle and listeners alone. Use this if you want to reuse the perception and message wiring and only change the decision logic.
+### Step 1 — Create the child Blueprint
 
-**Option B — Subclass `LyraPlayerBotController` directly.** Start blank. Use this if you want to remove the BT entirely and run your own decision loop on `Tick`.
+1. In the Content Browser, create your folder `Content/Bot/Student_<yourname>/`.
+2. Right-click `Content/Bot/B_ISW_AI` → **Create Child Blueprint Class**.
+3. Name it `B_<yourname>_AI` and save it inside your folder.
 
-For B, remember to:
+What you inherit for free:
 
-- Manually replicate the lifecycle-phase split: ExperienceReady for static setup, `OnPossess` for per-life setup.
-- Manually register gameplay-message listeners in the right phase.
-- Set the `Default Pawn Class` in the experience to a Lyra character that has the equipment you need (weapons, flag-pickup component).
+- The full `BeginPlay` lifecycle: ExperienceReady gating, flag-pad discovery, and the existing gameplay-message listeners.
+- The `OnTargetPerceptionUpdated` handler that writes `TargetEnemy` to the blackboard.
+- The three gameplay-message listeners: flag picked up, flag delivered, and elimination (see [05 — Elimination Listener](05-Example-Elimination-Listener.md)).
+- The `BBComp` caching pattern and all per-life blackboard resets in `OnPossess`.
 
-Either way, you need to point the experience asset (`B_ShooterGame_CaptureTheFlag` or your fork of it) at your new controller. Editing the experience is the only way to actually swap the controller — assigning it on the bot's Default Pawn won't work because Lyra spawns bots through the experience.
+### Step 2 — Create your own Behavior Tree
+
+1. Content Browser → right-click → **AI → Behavior Tree**. Name it `BT_<yourname>_bot`.
+2. In the BT's Details panel, set **Blackboard Asset** to `BB_ISW_Bot`. You can extend the blackboard later — see "Adding a new blackboard key" above.
+3. Build your tree. All existing node types (`BTS_CheckLOS`, `MoveTo`, the Lyra shooting service) are available.
+
+### Step 3 — Override `OnPossess` to run your tree
+
+Override `OnPossess` in your child Blueprint. **Call the parent first** (`Parent: On Possess`) — that runs BB caching and per-life key resets. Then call `RunBehaviorTree` with your tree:
+
+```
+Event OnPossess (InPawn)
+  └── Parent: On Possess               ← caches BBComp, resets per-life keys
+  └── RunBehaviorTree(BT_<yourname>_bot)
+```
+
+Do **not** call `UseBlackboard` again — the parent already did it and `BBComp` is now valid.
+
+### Step 4 — Add new gameplay-message listeners
+
+To react to events the baseline does not handle (e.g. a custom death response, an ammo event, team scoring), override `BeginPlay` in your child Blueprint:
+
+1. **Call the parent first** (`Parent: Begin Play`) — this registers the three existing listeners.
+2. Add your own `Listen for Gameplay Messages` nodes inside the same `OnReady` continuation, or chain a second `AsyncAction_ExperienceReady`.
+
+The parent's listeners remain active — you are adding new ones, not replacing them. Follow the same rules: register in `BeginPlay`, not `OnPossess`; guard with `IsValid(BBComp)`; update beliefs only.
+
+### Step 5 — Point the experience at your controller
+
+1. Open `Content/System/B_ShooterGame_CaptureTheFlag`.
+2. Find the **Bot** entry and change **AI Controller Class** to your `B_<yourname>_AI`.
+
+This is the only change needed to make every bot in the experience use your class.
+
+**Pitfalls specific to inheritance:**
+
+- **Overriding `OnPossess` without calling the parent.** `BBComp` is never cached; every blackboard write in your override silently no-ops.
+- **Overriding `BeginPlay` without calling the parent.** The three existing listeners do not register. The elimination handler will not clear `FlagCarrier`; the BT will chase a dead pawn indefinitely.
+- **Calling `UseBlackboard` again in your override.** The parent already ran it. Calling it again is harmless but creates a second reference and is confusing. Use the inherited `BBComp`.
+
+---
+
+## Cooperative behavior
+
+For projects that coordinate between bots (see [Assignments B and G](07-Assignments.md)), the standard approaches map directly onto Kubík's Chapter 4.
+
+### Centralized coordination
+
+A single server-side actor assigns roles to bots at spawn. Each bot stores its role in a new BB key `MyRole` and the BT branches on it.
+
+1. Create a `B_TeamCoordinator` actor (or `WorldSubsystem`) in the experience. It tracks open role slots.
+2. In each bot's `BeginPlay → OnReady`, call `TeamCoordinator → RegisterBot(self)`, receive the assigned role, and write it to `BBComp → SetValueAsEnum("MyRole", Role)`.
+3. In the BT, add a top-level **Selector** whose children are `[MyRole == Attacker]` and `[MyRole == Defender]` subtrees.
+4. On respawn (`OnPossess`), re-register so the coordinator can rebalance if a slot opened.
+
+This is *direct supervision* (*přímý dozor*) [Kubík 2004, Chapter 4.2] — Mintzberg's centralized coordination. Simple and deterministic.
+
+### Decentralized coordination (contract net)
+
+Bots broadcast availability and bid for open roles via gameplay messages or a shared state actor. No coordinator actor. This maps onto Smith's contract-net protocol [Kubík 2004, Chapter 4.3.2]. More implementation work, but a richer theoretical write-up.
+
+### Reading shared world state (stigmergy)
+
+Each bot has its own blackboard — you cannot share a BB key between bots. For shared facts (e.g. "does any teammate currently carry the enemy flag?"), use a **BT service** that polls a shared actor each tick and writes a derived local belief:
+
+1. Read from a shared actor (Game State, `B_TeamCoordinator`, or a flag pad).
+2. In a BT service `BTS_CheckTeamCarrying`, poll the shared actor and write a local `bool TeamCarryingFlag` key.
+3. Use that key in decorators as normal.
+
+This is the *stigmergy* / *reaktivní komunikace* pattern [Kubík 2004, Chapter 4.2.1]: agents read traces left in the environment rather than exchanging direct messages.
+
+---
+
+## Starting from scratch (advanced)
+
+If your assignment requires removing the BT entirely and running your own decision loop on `Tick`, implementing a GOAP planner, or an InteRRaP-layered controller (assignment G), subclass `LyraPlayerBotController` directly instead of `B_ISW_AI`.
+
+For all other assignments, **inherit from `B_ISW_AI`**.
+
+If you do start from scratch:
+
+- Manually replicate the lifecycle split: ExperienceReady for static setup, `OnPossess` for per-life setup.
+- Manually register gameplay-message listeners in `BeginPlay`, not `OnPossess`.
+- Wire up `AIPerceptionComponent` yourself if you need sight/hearing.
+- Set `Default Pawn Class` in the experience to a Lyra character with the equipment you need.
+- Point the experience at your controller class (same as Step 5 above).
 
 ## Common pitfalls reference
 

@@ -54,21 +54,109 @@ Použijte [komentovaný příklad](05-Example-Elimination-Listener.md) jako šab
 - Stínete `IsValid(BBComp)` před libovolným přístupem k blackboardu.
 - Aktualizujte představy, ne chování. Nevolejte `MoveTo` z handleru zprávy.
 
-## Nahrazení existujícího controlleru
+## Tvorba vlastního controlleru
 
-Pokud vaše zadání vyžaduje jinou architekturu agenta — BDI-style deliberativního agenta [Kubík 2004, §2.9], InteRRaP-style hybrida [Kubík 2004, §3.2.1], utility-based selector, atd. — máte dvě možnosti:
+Váš agent je **potomkem Blueprintu `B_ISW_AI`** — `B_ISW_AI` přímo neupravujete. Je to sdílený baseline, na kterém staví všichni studenti.
 
-**Možnost A — Podědit `B_ISW_AI`.** Zděďte, override `OnPossess`, životní cyklus a listenery nechte být. Použijte, když chcete znovu použít zapojení percepce a zpráv a měníte jen rozhodovací logiku.
+### Krok 1 — Vytvořte child Blueprint
 
-**Možnost B — Podědit `LyraPlayerBotController` přímo.** Začněte na zelené louce. Použijte, když chcete úplně odstranit BT a běhat vlastní rozhodovací smyčku na `Tick`.
+1. V Content Browseru vytvořte složku `Content/Bot/Student_<jmeno>/`.
+2. Pravý klik na `Content/Bot/B_ISW_AI` → **Create Child Blueprint Class**.
+3. Pojmenujte ho `B_<jmeno>_AI` a uložte do své složky.
 
-U možnosti B nezapomeňte:
+Co dostanete zdarma zděděním:
 
-- Ručně replikovat rozdělení fází životního cyklu: ExperienceReady pro statický setup, `OnPossess` pro per-life setup.
-- Ručně registrovat listenery herních zpráv ve správné fázi.
-- Nastavit `Default Pawn Class` v experience na Lyra postavu s vybavením, které potřebujete (zbraně, komponentu pro pickup vlajky).
+- Kompletní `BeginPlay` životní cyklus: ExperienceReady gating, objevení podstavců vlajek a stávající listenery herních zpráv.
+- Handler `OnTargetPerceptionUpdated`, který zapisuje `TargetEnemy` na blackboard.
+- Tři listenery herních zpráv: vyzvednutí vlajky, doručení vlajky a eliminace (viz [05 — Listener eliminace](05-Example-Elimination-Listener.md)).
+- Vzor cachování `BBComp` a všechny per-life resety v `OnPossess`.
 
-Tak či onak, experience asset (`B_ShooterGame_CaptureTheFlag` nebo váš fork) musí ukazovat na vašeho nového controllera. Úprava experience je jediný způsob, jak skutečně controller vyměnit — nastavení na Default Pawn bota nepomůže, protože Lyra spawnuje boty skrz experience.
+### Krok 2 — Vytvořte vlastní Behavior Tree
+
+1. Content Browser → pravý klik → **AI → Behavior Tree**. Pojmenujte `BT_<jmeno>_bot`.
+2. V Details panelu BT nastavte **Blackboard Asset** na `BB_ISW_Bot`. Blackboard můžete rozšířit — viz „Přidání nového klíče na blackboard" výše.
+3. Stavějte strom. Dostupné jsou všechny existující typy uzlů (`BTS_CheckLOS`, `MoveTo`, Lyra shooting service).
+
+### Krok 3 — Override `OnPossess` pro spuštění vašeho stromu
+
+Overridujte `OnPossess` ve svém child Blueprintu. **Nejdříve zavolejte rodiče** (`Parent: On Possess`) — to spustí cachování BB a per-life resety klíčů. Pak zavolejte `RunBehaviorTree` s vaším stromem:
+
+```
+Event OnPossess (InPawn)
+  └── Parent: On Possess               ← cachuje BBComp, resetuje per-life klíče
+  └── RunBehaviorTree(BT_<jmeno>_bot)
+```
+
+**Nevolejte `UseBlackboard` znovu** — rodič ho už zavolal a `BBComp` je teď platný.
+
+### Krok 4 — Přidání nových listenerů herních zpráv
+
+Chcete-li reagovat na události, které baseline nezpracovává (např. vlastní reakce na smrt, event munice, týmové skórování), overridujte `BeginPlay` ve svém child Blueprintu:
+
+1. **Nejdříve zavolejte rodiče** (`Parent: Begin Play`) — to zaregistruje tři stávající listenery.
+2. Přidejte vlastní uzly `Listen for Gameplay Messages` ve stejném pokračování `OnReady`, nebo napojte druhý řetěz `AsyncAction_ExperienceReady`.
+
+Listenery rodiče zůstávají aktivní — přidáváte nové, ne je nahrazujete. Platí stejná pravidla: registrujte v `BeginPlay`, ne v `OnPossess`; stíněte `IsValid(BBComp)`; aktualizujte jen představy.
+
+### Krok 5 — Nasměrujte experience na váš controller
+
+1. Otevřete `Content/System/B_ShooterGame_CaptureTheFlag`.
+2. Najděte položku **Bot** a změňte **AI Controller Class** na váš `B_<jmeno>_AI`.
+
+To je jediná změna potřebná k tomu, aby každý bot v experience používal vaši třídu.
+
+**Časté chyby specifické pro dědičnost:**
+
+- **Override `OnPossess` bez volání rodiče.** `BBComp` se nikdy nezachytí; každý zápis na blackboard ve vašem kódu tiše selže.
+- **Override `BeginPlay` bez volání rodiče.** Tři stávající listenery se nezaregistrují. Handler eliminace nevyčistí `FlagCarrier`; BT bude donekonečna pronásledovat mrtvý pawn.
+- **Opětovné volání `UseBlackboard` ve vašem overridu.** Rodič ho už spustil. Opětovné volání nezmění korektnost, ale vytvoří druhý odkaz a je matoucí. Používejte zděděný `BBComp`.
+
+---
+
+## Kooperativní chování
+
+Pro projekty, které koordinují chování mezi boty (viz [Zadání B a G](07-Assignments.md)), se standardní přístupy mapují přímo na Kubíkovu Kapitolu 4.
+
+### Centralizovaná koordinace
+
+Jeden server-side aktor přiřazuje botům role při spawnu. Každý bot uloží svou roli do nového BB klíče `MyRole` a BT se větví podle ní.
+
+1. Vytvořte aktor `B_TeamCoordinator` (nebo `WorldSubsystem`) v experience. Sleduje obsazené role.
+2. V `BeginPlay → OnReady` každého bota volejte `TeamCoordinator → RegisterBot(self)`, obdržte přiřazenou roli a zapište ji do `BBComp → SetValueAsEnum("MyRole", Role)`.
+3. V BT přidejte top-level **Selector**, jehož děti jsou podstromy `[MyRole == Attacker]` a `[MyRole == Defender]`.
+4. Při respawnu (`OnPossess`) se znovu zaregistrujte — koordinátor může rebalancovat, pokud se slot uvolnil.
+
+Toto je *přímý dozor* [Kubík 2004, Kapitola 4.2] — Mintzbergova centralizovaná koordinace. Jednoduché a deterministické.
+
+### Decentralizovaná koordinace (kontraktační síť)
+
+Boti vysílají dostupnost a podávají nabídky na otevřené role přes herní zprávy nebo sdílený stavový aktor. Žádný koordinátor. Mapuje se na Smithův protokol kontraktační sítě [Kubík 2004, Kapitola 4.3.2]. Více implementační práce, ale bohatší teoretický writeup.
+
+### Čtení sdíleného stavu světa (stigmergie)
+
+Každý bot má svůj vlastní blackboard — sdílení BB klíče mezi boty není možné. Pro sdílená fakta (např. „nese aktuálně někdo z týmu nepřátelskou vlajku?") použijte **BT service**, která každý tik polluje sdílený aktor a zapisuje odvozené lokální představy:
+
+1. Čtěte ze sdíleného aktoru (Game State, `B_TeamCoordinator`, nebo podstavec vlajky).
+2. V BT service `BTS_CheckTeamCarrying` pollujte sdílený aktor a zapisujte lokální klíč `bool TeamCarryingFlag`.
+3. Tento klíč používejte v dekorátorech jako obvykle.
+
+Toto je vzor *stigmergie* / *reaktivní komunikace* [Kubík 2004, Kapitola 4.2.1]: agenti čtou stopy zanechané v prostředí místo přímé výměny zpráv.
+
+---
+
+## Začít od nuly (pokročilé)
+
+Pokud vaše zadání vyžaduje úplné odstranění BT a spuštění vlastní rozhodovací smyčky na `Tick`, implementaci GOAP planneru nebo InteRRaP vrstvené architektury (zadání G), podědíte `LyraPlayerBotController` přímo místo `B_ISW_AI`.
+
+Pro všechna ostatní zadání **dědíte od `B_ISW_AI`**.
+
+Pokud začínáte od nuly:
+
+- Ručně replikujte rozdělení fází: ExperienceReady pro statický setup, `OnPossess` pro per-life setup.
+- Ručně registrujte listenery herních zpráv v `BeginPlay`, ne v `OnPossess`.
+- Zapojte `AIPerceptionComponent` sami, pokud potřebujete zrak/sluch.
+- Nastavte `Default Pawn Class` v experience na Lyra postavu s vybavením, které potřebujete.
+- Nasměrujte experience na vaši třídu controlleru (stejně jako Krok 5 výše).
 
 ## Reference častých chyb
 

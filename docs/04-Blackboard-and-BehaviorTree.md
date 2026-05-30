@@ -1,10 +1,10 @@
 # 04 — Blackboard and Behavior Tree
 
-This document is the reference for the baseline agent's **belief base** (in Kubík's terms: the internal state set `I` from the formal model in [Kubík 2004, §1.2]) and its **action-selection function** (`akce : P × I → A`).
+This document is the reference for the baseline agent's **belief base** (in Kubík's terms: the internal state set `I` from the formal model in [Kubík 2004, Chapter 1.2]) and its **action-selection function** (`akce : P × I → A`).
 
 ## Blackboard: `BB_ISW_Bot`
 
-The blackboard is the agent's belief base. In the formal model from [Kubík 2004, §1.2], this is `I` — the set of internal states. Each key represents one belief the agent currently holds about the world. The baseline AI uses the following keys:
+The blackboard is the agent's belief base. In the formal model from [Kubík 2004, Chapter 1.2], this is `I` — the set of internal states. Each key represents one belief the agent currently holds about the world. The baseline AI uses the following keys:
 
 ### Static beliefs (set once per match)
 
@@ -73,7 +73,7 @@ Two important patterns are happening here:
 
 **LOS gating of the Lyra Shooting Service.** The shooting service is provided by Lyra and is shared across all stock bot types. You are **strongly discouraged** from editing it. Instead, attach it to the sequence whose decorator (`CanSeeFlagCarrier == true`) gates whether shooting can happen. When the decorator goes false, the subtree aborts and the selector falls through to the chase-only branch. Shooting is therefore reactive to perception without any code changes to Lyra.
 
-This is functionally identical to Brooks's **potlačení a zabránění** mechanism between layers in the subsumpční architektura [Kubík 2004, §1.3.2]: a higher-priority subtree can inhibit a lower-priority one when its activation condition is satisfied. In Brooks's robots this was wired with explicit signal taps; in a BT it is wired with a decorator and Observer Aborts.
+This is functionally identical to Brooks's **potlačení a zabránění** mechanism between layers in the subsumpční architektura [Kubík 2004, Chapter 1.3.2]: a higher-priority subtree can inhibit a lower-priority one when its activation condition is satisfied. In Brooks's robots this was wired with explicit signal taps; in a BT it is wired with a decorator and Observer Aborts.
 
 **Why Simple Parallel + Wait(9999)?** This is the Lyra-recommended pattern for "do a movement task while a service continues to tick". `MoveTo` would otherwise terminate the subtree when it succeeds; the parallel keeps the subtree alive (and the shooting service running) until the decorator changes the agent's mind.
 

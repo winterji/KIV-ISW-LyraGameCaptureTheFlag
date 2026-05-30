@@ -19,7 +19,7 @@ Everything else — perception, beliefs, decisions, actions — sits inside that
 
 ## 3.2 Formal model
 
-In §1.2 the book gives the formal model of a reactive agent as a 6-tuple:
+In Chapter 1.2 the book gives the formal model of a reactive agent as a 6-tuple:
 
 ```
 { P, A, I, vjem, změna_stavu, akce }
@@ -34,7 +34,7 @@ where
 - `změna_stavu : P × I → I` — state-update function
 - `akce : P × I → A` — action-selection function
 
-A subset `C ⊆ I` is the set of **goal states** (cíle). A purely reactive agent (čistě reaktivní agent, §1.2) drops `I` entirely and is just `akce : P → A`.
+A subset `C ⊆ I` is the set of **goal states** (cíle). A purely reactive agent (čistě reaktivní agent, Chapter 1.2) drops `I` entirely and is just `akce : P → A`.
 
 This is *exactly* the shape of our agent in code:
 
@@ -55,10 +55,10 @@ This is *exactly* the shape of our agent in code:
 
 | Architecture       | Kubík reference  | Defining property                                                          | Game example                                                    |
 | ------------------ | ---------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **Reaktivní**      | §1               | No internal model of the world. Action is a function of current percept (and maybe a small buffer). | A Quake bot with reflex shooting and a small state machine.    |
-| **Deliberativní (uvažující)** | §2 | Symbolic representation of the world; plans toward goals.                  | An RTS bot that pathfinds, books production queues, ranks targets by utility. |
-| **Sociální**       | §3.1, §4         | Communicates with other agents in a higher-level language.                 | Coordinated CTF teams that exchange role assignments.           |
-| **Hybridní**       | §3.2 (InteRRaP)  | Layered combination of the above.                                          | The shipped `B_ISW_AI` is closest to here — reactive at the leaves, with a symbolic belief base in between. |
+| **Reaktivní**      | Chapter 1        | No internal model of the world. Action is a function of current percept (and maybe a small buffer). | A Quake bot with reflex shooting and a small state machine.    |
+| **Deliberativní (uvažující)** | Chapter 2 | Symbolic representation of the world; plans toward goals.                  | An RTS bot that pathfinds, books production queues, ranks targets by utility. |
+| **Sociální**       | Chapters 3.1 and 4 | Communicates with other agents in a higher-level language.               | Coordinated CTF teams that exchange role assignments.           |
+| **Hybridní**       | Chapter 3.2 (InteRRaP) | Layered combination of the above.                                    | The shipped `B_ISW_AI` is closest to here — reactive at the leaves, with a symbolic belief base in between. |
 
 ### 3.3.1 Where the baseline sits
 
@@ -66,9 +66,27 @@ The baseline `B_ISW_AI`:
 
 - Maintains a **symbolic belief base** (Blackboard) — pulls it toward *deliberativní*.
 - Selects actions reactively from current beliefs — pulls it back toward *reaktivní*.
-- Does not currently plan, communicate, or model other agents.
+- Does not currently communicate with other agents or model their beliefs.
 
-By Kubík's typology it is essentially a **reactive agent extended with a belief base**, similar in spirit to the *uvažující agent na bázi reaktivity* / Robot Toto in §2.1 [Kubík 2004, §2.1]. The baseline does not implement BDI or any goal-deliberation step; that's left as an exercise (see [07 — Assignments, project E](07-Assignments.md#e-goal-driven-deliberative-agent-)).
+It is in spirit close to the *uvažující agent na bázi reaktivity* / Robot Toto in Chapter 2.1 [Kubík 2004, Chapter 2.1]: reactive execution layered on top of a symbolic representation of the world.
+
+### 3.3.2 Is the baseline BDI?
+
+It's tempting to read the BT through a BDI lens — and the reading is largely valid. The baseline has all three BDI categories present:
+
+- **Beliefs (Bel)** — **explicitly** in the Blackboard. Every BB key is `Bel(self, φ)` for some proposition φ.
+- **Desires / Goals (Goal)** — **implicitly** in the decorator preconditions on each subtree. `[OurFlagCaptured == true]` reads as `Goal(self, FlagRecovered)`; `[CarryingFlag == true]` reads as `Goal(self, FlagDelivered)`. The Observer Aborts machinery activates the goal whose precondition has just become true.
+- **Intentions (Int)** — **implicitly** as the currently-active subtree path. The same Observer Aborts mechanism is functionally Bratman's intention-revision: a commitment that gets retracted the moment its activation condition fails.
+
+So in the loose sense common in game AI, the baseline **is BDI-inspired**.
+
+It diverges from Kubík's strict BDI architecture [Kubík 2004, Chapters 2.8.3, 2.9, 2.10] in three concrete ways:
+
+1. **No first-class data for desires and intentions.** In IRMA ([Kubík 2004, Obr. 2.8, s. 56]) beliefs, desires, intentions, and plans are *four separately stored knowledge bases* that the deliberation cycle reads from and writes to. In the baseline, desires and intentions live in BT topology — visible in the editor and the Gameplay Debugger, but not queryable as runtime data, not modifiable from outside, and not communicable to another agent.
+2. **No deliberation cycle.** The canonical BDI loop ([Kubík 2004, p. 54]) is `events ← percept() → bel ← belrev() → goal ← options() → int ← filter() → pl ← plan() → execute()`. The BT does `perceive → walk-tree-in-priority → execute`. The pieces missing are explicit option enumeration (`options()`) and the IRMA filtering machinery — `filter kompatibility`, `analyzátor příležitostí`, `filter override mechanism` (all Chapter 2.10).
+3. **No plan library or plan generation.** Subtrees are hardcoded execution policies, not a `knihovna plánů` indexed by goal that the agent can search.
+
+If you want to push the architecture toward proper BDI in Kubík's sense, project E in [07 — Assignments](07-Assignments.md#e-goal-driven-deliberative-agent-) is exactly that exercise: promote `CurrentGoal` and `CurrentIntention` to first-class BB keys, implement a `BTT_SelectGoal` that runs the `options() → filter()` step, and dispatch the right subtree from there. That's the smallest change that makes the system describable as BDI in IRMA's terms.
 
 ## 3.4 Mapping to UE5 / Lyra concepts
 
@@ -87,11 +105,11 @@ A few things worth flagging:
 
 - The **AI Controller outlives the pawn**. When the pawn dies, the controller stays. On respawn the same controller `OnPossess`es a new pawn. So anything that should persist across deaths (gameplay-message listeners) goes on the controller, not on the pawn.
 - The **Blackboard is not a key-value scratchpad** — in Kubík's terms it's `I`, the agent's internal state, and it should be treated as a belief base. Add a key only when it represents a meaningful proposition about the world; write to it only when that proposition actually changes.
-- A **Behavior Tree ticks reactively**. It is not a planner. If you want planning, encode the *result* of planning into the blackboard and let the BT consume it. This is the same separation Kubík uses when discussing the integration of reactivity and planning in InteRRaP [Kubík 2004, §3.2.1].
+- A **Behavior Tree ticks reactively**. It is not a planner. If you want planning, encode the *result* of planning into the blackboard and let the BT consume it. This is the same separation Kubík uses when discussing the integration of reactivity and planning in InteRRaP [Kubík 2004, Chapter 3.2.1].
 
 ## 3.5 Subsumption architecture and the BT
 
-Brooks's subsumpční architektura (§1.3 of the book) is one of the clearest historical reference points for what a Behavior Tree does in practice. Brooks's key properties were:
+Brooks's subsumpční architektura (Chapter 1.3 of the book) is one of the clearest historical reference points for what a Behavior Tree does in practice. Brooks's key properties were:
 
 - **Tělesnost** (embodiment) — the agent has a body and sensors/actuators that exist in the world. Trivially true here: the pawn is the body.
 - **Situovanost** (situatedness) — the agent is embedded in a real environment with which it interacts continuously. Also trivially true.
@@ -100,7 +118,7 @@ Brooks's subsumpční architektura (§1.3 of the book) is one of the clearest hi
 
 The mechanism Brooks called **potlačení a zabránění** (suppression and inhibition) between layers is what BT decorators with *Observer Aborts: Lower Priority* are doing in our tree: a higher-priority subtree (recover flag) suppresses lower ones (steal) when its precondition becomes true. See [04 — Blackboard & Behavior Tree](04-Blackboard-and-BehaviorTree.md) for how this is wired in `BT_ISW_CTF_bot`.
 
-What the BT model does *not* give you, that subsumption also lacks, is **explicit planning toward a goal**. That is the domain of deliberative agents (§2, [Kubík 2004]) and BDI architectures specifically (§2.9). If your assignment requires planning, you will be moving beyond pure BT — see [07 — Assignments, project E](07-Assignments.md#e-goal-driven-deliberative-agent-).
+What the BT model does *not* give you, that subsumption also lacks, is **explicit planning toward a goal**. That is the domain of deliberative agents ([Kubík 2004, Chapter 2]) and BDI architectures specifically (Chapter 2.9). If your assignment requires planning, you will be moving beyond pure BT — see [07 — Assignments, project E](07-Assignments.md#e-goal-driven-deliberative-agent-).
 
 ## 3.6 Controller lifecycle (engineering)
 
@@ -148,9 +166,9 @@ Gameplay messages, perception events, anim notifies, etc. run on the controller 
 
 Three kinds of "perception" coexist in this project — and they all collapse into the single `vjem` function in Kubík's formal model. In practice you should use them intentionally:
 
-1. **Lyra `AIPerceptionComponent`** — sight and hearing cones configured on the controller. Fires `OnTargetPerceptionUpdated`. This is what populates `TargetEnemy`. Realistic, lossy, noisy. Analogous to a robot's onboard sensors in [Kubík 2004, §1.3].
-2. **Behavior-tree services** — small Blueprint scripts that tick while a subtree is active. `BTS_CheckLOS` polls `LineOfSightTo(FlagCarrier)` and writes the boolean result. Analogous to Brooks's *kompetenční moduly* [Kubík 2004, §1.2].
-3. **Gameplay-message subscriptions** — pub/sub events broadcast by the game (`Lyra.CaptureTheFlag.FlagPickedUp.Message`, …). These are "perceptual" in the sense Kubík uses in §4.2.1 when discussing **reaktivní komunikace** / **stigmergie**: agents read traces in the environment instead of directly observing each other. Gameplay messages are a slightly higher-level form of the same idea: explicit broadcast rather than implicit trace.
+1. **Lyra `AIPerceptionComponent`** — sight and hearing cones configured on the controller. Fires `OnTargetPerceptionUpdated`. This is what populates `TargetEnemy`. Realistic, lossy, noisy. Analogous to a robot's onboard sensors in [Kubík 2004, Chapter 1.3].
+2. **Behavior-tree services** — small Blueprint scripts that tick while a subtree is active. `BTS_CheckLOS` polls `LineOfSightTo(FlagCarrier)` and writes the boolean result. Analogous to Brooks's *kompetenční moduly* [Kubík 2004, Chapter 1.2].
+3. **Gameplay-message subscriptions** — pub/sub events broadcast by the game (`Lyra.CaptureTheFlag.FlagPickedUp.Message`, …). These are "perceptual" in the sense Kubík uses in Chapter 4.2.1 when discussing **reaktivní komunikace** / **stigmergie**: agents read traces in the environment instead of directly observing each other. Gameplay messages are a slightly higher-level form of the same idea: explicit broadcast rather than implicit trace.
 
 Each has different cost, fidelity, and timing. There is no canonical answer to which one you should use — design the blend that fits the behavior you want.
 

@@ -18,7 +18,7 @@ Plugin musí být v cestě:
 <VášProjekt>/Plugins/GameFeatures/ShooterCTF/
 ```
 
-Pokud složka `Plugins/GameFeatures/` neexistuje, vytvořte ji. Pokud jste si stáhli celý tento repozitář, cesta už je správná.
+Pokud složka `Plugins/GameFeatures/` neexistuje, vytvořte ji.
 
 ## 4. Aktivace pluginu
 
@@ -49,7 +49,7 @@ Během Play:
 
 Pokud gameplay debugger ukazuje naplněný blackboard a boti se pohybují, pronásledují a skórují, máte hotovo.
 
-## 7. Kde jsou soubory, které budete upravovat
+## 7. Kde jsou soubory, které budete potřebovat
 
 | Asset                        | Cesta                                                  | K čemu slouží                          |
 | ---------------------------- | ------------------------------------------------------ | -------------------------------------- |

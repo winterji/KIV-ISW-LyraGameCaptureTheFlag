@@ -11,12 +11,7 @@ Dva týmy. Každý tým má **vlajkovou základnu** na svém konci mapy. Na kaž
 3. Vrátí se na **vlastní základnu**, stále s vlajkou.
 4. **Doručí** vlajku na své základně — to mu připíše jeden bod za skóre a nepřátelská vlajka se respawnuje na svém domácím podstavci.
 
-Pokud je nositel vlajky eliminován, vlajka spadne na zem na jeho posledním místě. S upuštěnou vlajkou může interagovat kdokoliv:
-
-- Členové **vlastního týmu** vlajky ji mohou dotykem vrátit na základnu.
-- Členové **nepřátelského týmu** ji mohou opět vyzvednout a pokračovat v krádeži.
-
-Pokud upuštěná vlajka neinteraguje s nikým po určitý timeout, automaticky se vrátí na svou domácí základnu. (Timeout je nastavený na vlajce / skórovací komponentě.)
+Pokud je nositel vlajky eliminován, vlajka se vrátí zpátky na základnu.
 
 Zápas končí, když některý tým dosáhne limitu skóre, nebo vyprší časovač kola (podle konfigurace experience).
 
@@ -48,7 +43,7 @@ V `Content/Blueprint/B_CaptureTheFlagScoring`. Sleduje skóre a vysílá herní 
 
 Hra rozesílá změny stavu skrz **Gameplay Message Subsystem** (Lyra). Jsou to publish/subscribe události na pojmenovaných kanálech s typovaným payloadem. V Blueprintu se přihlašujete uzlem `Listen for Gameplay Messages`.
 
-V terminologii Kubíka je tento mechanismus blízký **komunikačním aktům** [Kubík 2004, §4.4] — explicitní zprávy ve vyšším jazyce nezávislé na fyzické viditelnosti agenta — s prvky **reaktivní komunikace / stigmergie** [Kubík 2004, §4.2.1], protože emitorem nejsou samotní agenti, ale herní systém aktualizující "stopu" v prostředí.
+V terminologii Kubíka je tento mechanismus blízký **komunikačním aktům** — explicitní zprávy ve vyšším jazyce nezávislé na fyzické viditelnosti agenta — s prvky **reaktivní komunikace / stigmergie**, protože emitorem nejsou samotní agenti, ale herní systém aktualizující "stopu" v prostředí.
 
 | Kanál                                         | Payload                | Vysílá se, když                                       |
 | --------------------------------------------- | ---------------------- | ----------------------------------------------------- |

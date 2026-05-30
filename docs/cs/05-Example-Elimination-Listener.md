@@ -4,7 +4,7 @@ Tento dokument je průchozí ukázkou jedné funkce, která už v `B_ISW_AI` exi
 
 Cíl: když relevantní pawn umře, agent aktualizuje svůj blackboard tak, aby behavior tree mohl zareagovat na příštím ticku.
 
-V Kubíkově rámci je herní zpráva hybridem **reaktivní komunikace** ([Kubík 2004, §4.2.1] — stigmergické stopy v prostředí) a **komunikačního aktu** ([Kubík 2004, §4.4] — explicitní pub/sub zprávy ve vyšším jazyce). Hra vysílá typovanou událost s jasnou sémantikou; agenti, kteří se přihlásili k odběru, ji zpracovávají jako `vjem`. Důležité: tato percepce obchází `AIPerceptionComponent` — agent na druhé straně mapy se o eliminaci dozví, i když ji nemohl vidět. Je to stejný kompromis, o kterém Kubík mluví na s. 17 mezi stigmergií a přímou komunikací: stigmergie je realistická, ale pomalá a ztrátová; přímá komunikace je všeznalá, ale omezená na události, které systém explicitně emituje.
+V Kubíkově rámci je herní zpráva hybridem **reaktivní komunikace** ([Kubík 2004, Kapitola 4.2.1] — stigmergické stopy v prostředí) a **komunikačního aktu** ([Kubík 2004, Kapitola 4.4] — explicitní pub/sub zprávy ve vyšším jazyce). Hra vysílá typovanou událost s jasnou sémantikou; agenti, kteří se přihlásili k odběru, ji zpracovávají jako `vjem`. Důležité: tato percepce obchází `AIPerceptionComponent` — agent na druhé straně mapy se o eliminaci dozví, i když ji nemohl vidět. Je to stejný kompromis, o kterém Kubík mluví na s. 17 mezi stigmergií a přímou komunikací: stigmergie je realistická, ale pomalá a ztrátová; přímá komunikace je všeznalá, ale omezená na události, které systém explicitně emituje.
 
 ## Co listener má dělat
 

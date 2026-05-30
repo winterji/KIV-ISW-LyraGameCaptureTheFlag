@@ -1,10 +1,10 @@
 # 04 — Blackboard a Behavior Tree
 
-Tento dokument je referencí baseline agentovy **báze představ** (v Kubíkových termínech: množina vnitřních stavů `I` z formálního modelu v [Kubík 2004, §1.2]) a jeho **funkce výběru akce** (`akce : P × I → A`).
+Tento dokument je referencí baseline agentovy **báze představ** (v Kubíkových termínech: množina vnitřních stavů `I` z formálního modelu) a jeho **funkce výběru akce** (`akce : P × I → A`).
 
 ## Blackboard: `BB_ISW_Bot`
 
-Blackboard je báze představ agenta. V termínech formálního modelu z [Kubík 2004, §1.2] je to `I` — množina vnitřních stavů. Každý klíč reprezentuje jednu představu, kterou agent právě o světě má. Baseline AI používá tyto klíče:
+Blackboard je báze představ agenta. V termínech formálního modelu je to `I` — množina vnitřních stavů. Každý klíč reprezentuje jednu představu, kterou agent právě o světě má. `BB_ISW_Bot` používá tyto klíče:
 
 ### Statické představy (nastavené jednou za zápas)
 
@@ -73,7 +73,7 @@ Dva důležité vzory:
 
 **LOS brána Lyra Shooting Service.** Shooting service je dodávaná Lyrou a sdílená napříč stock botem. Důrazně se nedoporučuje ji upravovat. Místo toho ji připojte na sequence, jejíž dekorátor (`CanSeeFlagCarrier == true`) určuje, zda střelba může probíhat. Když dekorátor přejde na false, podstrom přeruší a selector se propadne na pronásledovací větev. Střelba je tak reaktivní vůči vjemu bez jakýchkoliv změn v Lyra kódu.
 
-Funkčně to je totéž jako Brooksův mechanismus **potlačení a zabránění** mezi vrstvami v subsumpční architektuře [Kubík 2004, §1.3.2]: podstrom s vyšší prioritou může inhibovat nižší, když je jeho aktivační podmínka splněna. U Brooksových robotů to bylo zapojeno explicitními signálovými odbočkami; v BT je to zapojeno dekorátorem a Observer Aborts.
+Funkčně to je totéž jako Brooksův mechanismus **potlačení a zabránění** mezi vrstvami v subsumpční architektuře [Kubík 2004, Kapitola 1.3.2]: podstrom s vyšší prioritou může inhibovat nižší, když je jeho aktivační podmínka splněna. U Brooksových robotů to bylo zapojeno explicitními signálovými odbočkami; v BT je to zapojeno dekorátorem a Observer Aborts.
 
 **Proč Simple Parallel + Wait(9999)?** Toto je doporučený Lyra vzor pro „prováděj movement task, zatímco služba dál tikuje". `MoveTo` by jinak ukončilo podstrom, jakmile uspěje; parallel ho drží naživu (a shooting service dál tikuje), dokud dekorátor agentův názor nezmění.
 

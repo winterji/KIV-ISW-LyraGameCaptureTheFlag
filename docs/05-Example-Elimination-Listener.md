@@ -4,7 +4,7 @@ This document is a guided walkthrough of one feature that already exists in `B_I
 
 The goal: when a relevant pawn dies, the agent updates its blackboard so the behavior tree can react on the next tick.
 
-In Kubík's framework, a gameplay message is a hybrid of **reaktivní komunikace** ([Kubík 2004, §4.2.1] — stigmergic traces in the environment) and **komunikační akt** ([Kubík 2004, §4.4] — explicit pub/sub messaging in a higher-level language). The game broadcasts a typed event with a well-defined semantics; agents that have subscribed treat it as a `vjem`. Crucially, this perception bypasses the visual `AIPerceptionComponent` — an agent on the other side of the map learns of an elimination even though it could not have seen it. This is the same trade-off Kubík discusses on p. 17 between stigmergy and direct communication: stigmergy is realistic but slow and lossy; direct messaging is omniscient but limited to events the system explicitly emits.
+In Kubík's framework, a gameplay message is a hybrid of **reaktivní komunikace** ([Kubík 2004, Chapter 4.2.1] — stigmergic traces in the environment) and **komunikační akt** ([Kubík 2004, Chapter 4.4] — explicit pub/sub messaging in a higher-level language). The game broadcasts a typed event with a well-defined semantics; agents that have subscribed treat it as a `vjem`. Crucially, this perception bypasses the visual `AIPerceptionComponent` — an agent on the other side of the map learns of an elimination even though it could not have seen it. This is the same trade-off Kubík discusses on p. 17 between stigmergy and direct communication: stigmergy is realistic but slow and lossy; direct messaging is omniscient but limited to events the system explicitly emits.
 
 ## What we want the listener to do
 
