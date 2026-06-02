@@ -8,7 +8,7 @@ Get UE 5.7 through the Epic Games Launcher. Newer 5.x versions may work, but Lyr
 
 ## 2. Get Lyra Starter Game
 
-Lyra is a free Epic-published reference project. Open the **Epic Games Launcher → Unreal Engine → Library → Marketplace**, search for *Lyra Starter Game*, and **Create Project**. Pick a location with at least 30 GB free.
+Lyra is a free Epic-published reference project. Open the **Epic Games Launcher → Unreal Engine → Library → Marketplace**, search for *Lyra Starter Game*, and click **Create Project**. Pick a location with at least 30 GB free.
 
 ## 3. Place the ShooterCTF plugin
 
@@ -18,7 +18,7 @@ The plugin should live at:
 <YourProject>/Plugins/GameFeatures/ShooterCTF/
 ```
 
-If the `Plugins/GameFeatures/` folder doesn't exist, create it. If you cloned this whole repository, the path is already correct.
+If the `Plugins/GameFeatures/` folder doesn't exist, create it.
 
 ## 4. Enable the plugin
 
@@ -53,18 +53,17 @@ If the gameplay debugger shows a populated blackboard and the bots move around c
 
 | Asset                        | Path                                                  | Purpose                                |
 | ---------------------------- | ----------------------------------------------------- | -------------------------------------- |
-| `B_ISW_AI`                   | `Content/Bot/B_ISW_AI`                                | The Blueprint AI controller            |
-| `BB_ISW_Bot`                 | `Content/Bot/BB_ISW_Bot`                              | The blackboard                         |
-| `BT_ISW_CTF_bot`             | `Content/Bot/BT_ISW_CTF_bot`                          | The main behavior tree                 |
+| `B_ISW_AI`                   | `Content/Bot/B_ISW_AI`                                | Blueprint AI controller                |
+| `BB_ISW_Bot`                 | `Content/Bot/BB_ISW_Bot`                              | Blackboard                             |
+| `BT_ISW_CTF_bot`             | `Content/Bot/BT_ISW_CTF_bot`                          | Main Behavior Tree                     |
 | `BTS_CheckLOS`               | `Content/Bot/BTS_CheckLOS`                            | Service that updates `CanSeeFlagCarrier` |
-| `B_GrantFlagPad`             | `Content/Blueprint/B_GrantFlagPad`                    | The flag base actor                    |
+| `B_GrantFlagPad`             | `Content/Blueprint/B_GrantFlagPad`                    | Flag base actor                        |
 | `B_FlagActor`                | `Content/Items/Flag/`                                 | The flag itself                        |
 | `B_CaptureTheFlagScoring`    | `Content/Blueprint/B_CaptureTheFlagScoring`           | Scoring component                      |
-| Experience asset             | `Content/Experiences/B_ShooterGame_CaptureTheFlag`    | The Lyra Experience that boots CTF mode |
+| Experience asset             | `Content/Experiences/B_ShooterGame_CaptureTheFlag`    | Lyra Experience that boots CTF mode    |
 
 ## 8. Troubleshooting
 
 - **The plugin doesn't appear in the Plugins window.** Check that the `.uplugin` file is directly under `Plugins/GameFeatures/ShooterCTF/`, not one folder deeper.
-- **Editor crashes on load after enabling.** You're almost certainly on the wrong engine version. Look for a "Module not compatible" dialog in the log.
-- **Match starts but no bots spawn.** Open the experience asset and verify it points at a valid spawner; on the firing range map there are explicit spawn volumes.
+- **Editor crashes on enable.** You probably have the wrong engine version. You need version 5.5+ (tested on 5.7.4).
 - **Bots spawn but don't do anything.** The controller may have failed to start the BT. Open the gameplay debugger (`'`) and look at the bot's BB — if it's empty, see the lifecycle discussion in [03 — AI Architecture](03-AI-Architecture.md).

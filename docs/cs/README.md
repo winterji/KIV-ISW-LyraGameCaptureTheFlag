@@ -36,13 +36,21 @@ Pokud se s projektem setkáváte poprvé, čtěte v pořadí:
   - na startu zjistí, kde jsou základny obou týmů;
   - pronásleduje a střílí nositele nepřátelské vlajky s tím, že střelba je podmíněna přímou viditelností;
   - reaguje na herní zprávy o vyzvednutí / doručení vlajky a o eliminaci postavy;
-  - při své smrti uvolní vlajku, pokud ji zrovna nesl (viz [05](05-Example-Elimination-Listener.md)). Vlajka se pak vrátí na základnu.
+  - při své smrti se vlajka vrátí na základnu, pokud ji zrovna nesl (viz [05](05-Example-Elimination-Listener.md)).
 
-Vlastního agenta budete stavět **děděním od `B_ISW_AI`** — váš child Blueprint si zachová veškeré toto zapojení a přidá vlastní Behavior Tree a případné další listenery. Baseline záměrně **není silným protihráčem** — smyslem je udělat lepšího.
+Vlastního agenta budete stavět **děděním od `B_ISW_AI`** — váš child Blueprint si zachová veškeré toto zapojení a přidá vlastní nebo rozšíří existující Behavior Tree a případné přidá další listenery. Baseline záměrně **není silným protihráčem** — smyslem je udělat lepšího.
 
 ## Co za vás neuděláme
 
-Vaším úkolem bude **navrhnout a implementovat alespoň jedno netriviální chování AI** nad tímto baseline. Dokumentace vám říká, kde je co, co je bezpečné měnit, a na jaké přešlapy minulé generace studentů narazila — ale **architektura agenta je vaše věc**. Inspiraci najdete v [Zadání projektů](07-Assignments.md).
+Vaším úkolem bude **navrhnout a implementovat alespoň jedno netriviální chování AI** nad tímto baseline. Dokumentace vám popíše v jakém stavu je AI controller teď a jak přistoupit k jeho rozšíření. Doporučuji si opravdu přečíst alespoň [AI Architekturu](03-AI-Architecture.md) a [Rozšíření AI](06-Extending-the-AI.md) kde jsou vysvětleny důležité pojmy a postupy spolu s častými chybami. Zadání s pár tipy a doporučením najdete v [Zadání projektů](07-Assignments.md).
+
+## Další dostupné materiály
+
+| Popis | Url |
+| ----- | ---- |
+| Dokumentace Lyra Sample Game | https://dev.epicgames.com/documentation/unreal-engine/lyra-sample-game-in-unreal-engine
+| YT - popis default AI controlleru v Lyra | https://www.youtube.com/watch?v=jZFgTEGRJxg
+| UE5 docs - AI controller | https://dev.epicgames.com/documentation/unreal-engine/behavior-tree-in-unreal-engine---quick-start-guide
 
 ## Konvence použité v dokumentaci
 

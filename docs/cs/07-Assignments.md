@@ -8,8 +8,6 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 
 ## A. Chytřejší realizace existujícího rozhodování (★)
 
-**Reference v knize:** [Kubík 2004, Kapitola 1.4 — *Jiné architektury reaktivních agentů*]; konkrétně **architektura s výběrem akce** v Kapitole 1.4.1.
-
 **Pojmy:** Reaktivní agent s rozšířenou bází představ. V Kubíkových termínech obohacujete `I` o další představy (př. poslední známé pozice nepřátel) a měníte `akce : P × I → A` tak, aby vybraný waypoint tyto představy reflektoval.
 
 ### Varianta 1
@@ -34,7 +32,7 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 
 **Reference v knize:** [Kubík 2004, Kapitola 4.2 — *Koordinace*] (centralizovaná vs. decentralizovaná koordinace); a Kapitola 4.3.2 — *Kontraktační síť* (Smith 1980), pokud chcete čistě decentralizovanou formulaci.
 
-**Co:** Teď jsou všichni boti identičtí. Všichni se snaží krást, všichni bránit. Implementujte koordinaci tak, aby se tým rozdělil: např. dva útočníci, dva obránci, jeden flex.
+**Co:** Teď jsou všichni boti identičtí. Všichni se snaží krást, všichni bránit. Implementujte koordinaci tak, aby se tým rozdělil: např. jeden neustále bránil a druhý se snažil vzít vlajku.
 
 **Pojmy:** Multiagentové systémy. **Koordinace** mezi agenty. Můžete si vybrat:
 
@@ -47,21 +45,7 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 
 ---
 
-## C. Obranná pozice u podstavce vlajky (★★)
-
-**Reference v knize:** [Kubík 2004, Kapitola 2.3 — *Mapa prostředí*] a Kapitola 2.5 — *Cílově orientovaná navigace*. Mataricin robot Toto je kanonickou referencí pro agenta, který staví prostorovou reprezentaci a podle ní pak naviguje.
-
-**Co:** Když ještě nikdo neukradl vlajku, obránce by neměl stát na podstavci — měl by být blízko, v krytu, s výhledy na nájezdové cesty.
-
-**Pojmy:** Prostorové uvažování. Reaktivní agent s lokálně optimalizovaným umístěním. Kde Toto měl mapu jako graf značek `(LW, RW, C, J, …)`, váš agent použije UE5 NavMesh + EQS jako ekvivalentní prostorovou reprezentaci.
-
-**Doporučený přístup:** Sestavte EQS dotaz, který ohodnocuje pozice podle: vzdálenosti k vlastnímu podstavci vlajky (v rozsahu), krytí před hlavními přístupovými vektory, a přímé viditelnosti na přístup. Pravidelně spouštějte dotaz ve službě a nejlepší pozici zapisujte do nového BB klíče `DefensePost`. Použijte ho jako `MoveGoal` v default větvi, když je agent v roli „defender".
-
-**Definice hotovo:** S lidským útočníkem by obránce měl znatelně ztížit dosažení vlajky oproti baseline.
-
----
-
-## D. Deliberativní agent řízený cíli (★★★)
+## C. Deliberativní agent řízený cíli (★★★)
 
 **Reference v knize:** [Kubík 2004, Kapitola 2 — *Uvažující agent*], obzvlášť Kapitoly 2.7–2.9 (teorie BDI: **Představa – Touha – Záměr**). Volitelně Kapitola 2.10 — architektura IRMA jako implementační reference.
 
@@ -75,7 +59,7 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 
 ---
 
-## F. Úplné nahrazení BT jinou architekturou (★★★★)
+## D. Úplné nahrazení BT jinou architekturou (★★★★)
 
 **Reference v knize:** [Kubík 2004, Kapitola 3.2 — *Hybridní agent*]; konkrétně architektura **InteRRaP** (Müller 1996) z Kapitoly 3.2.1, s jejími vrstvami reaktivního / lokálního plánovacího / kooperativního plánovacího chování a jejich `řídicími cykly`.
 
@@ -94,7 +78,7 @@ Obtížnost: ★ snadné, ★★ střední, ★★★ těžké, ★★★★ amb
 Pro libovolnou ze zadání očekávejte odevzdat:
 
 1. **Implementaci** v `Content/Bot/Student_<jmeno>/` — child Blueprint od `B_ISW_AI` plus vlastní Behavior Tree a podpůrné assety.
-2. **Krátký writeup** (pár stran) popisující návrh agenta **v Kubíkově terminologii** — jasně identifikujte, ke kterým sekcím knihy se vaše architektura vztahuje, kde se odchyluje a proč.
+2. **Krátký writeup** (pár stran) popisující návrh agenta **v Kubíkově terminologii**.
 3. **Záznam dema** agenta v akci proti baseline.
 
 Pokud zadání mění experience nebo přidává aktory, dokumentujte ty změny ve writeupu, aby budoucí studenti mohli číst váš kód bez špelunkingu.
@@ -104,7 +88,7 @@ Pokud zadání mění experience nebo přidává aktory, dokumentujte ty změny 
 Přibližně v sestupném pořadí důležitosti:
 
 1. **Korektnost.** Váš agent dělá to, co váš návrh říká, že má dělat — ověřitelné v gameplay debuggeru.
-2. **Zdůvodněný návrh.** Vaše volby se čistě mapují na pojmy z Kubíka. Můžete vysvětlit *proč* jste vybrali tu architekturu, s citací příslušných sekcí, ne jenom *co* dělá.
+2. **Zdůvodněný návrh.** Vaše volby se čistě mapují na pojmy z Kubíka. Můžete vysvětlit *proč* jste vybrali tu architekturu, ne jenom *co* dělá.
 3. **Důkaz.** Nějaká kvantitativní evaluace, byť neformální. „Vyhraje 7/10 zápasů" je lepší než „cítí se silnější".
 4. **Hygiena kódu.** Držte se vzorů z [06 — Rozšiřování AI](06-Extending-the-AI.md). Dědíte od `B_ISW_AI` — sdílené baseline assety přímo neupravujte.
 5. **Polish.** Stretch goals jako hezčí chování, animace nebo koordinovaná týmová hra se cení, ale nejsou nutné.

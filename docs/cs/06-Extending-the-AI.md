@@ -7,30 +7,25 @@ Tento dokument prochází nejčastější změny, které budete dělat. Pro kaž
 1. Otevřete `Content/Bot/BB_ISW_Bot`.
 2. Klikněte **New Key** a vyberte typ. Bool, Vector, Object a Float pokrývají skoro všechno.
 3. Pojmenujte ho podle **toho, co znamená**, ne podle toho, odkud pochází. `EnemyIsNearMyBase` je dobré; `PerceptionEvent42` špatné.
-4. Doplňte řádek do tabulky v [04 — Blackboard a Behavior Tree](04-Blackboard-and-BehaviorTree.md), aby budoucí studenti věděli, co jste přidali.
 
-**Časté chyby:**
-
-- Pokud nový klíč čtete z BT dekorátoru dřív, než do něj cokoli zapíšete, dostanete defaultní hodnotu typu (false / nula / None). To je obvykle v pořádku — pokud ne, zapište ho v `OnPossess`.
-- Pokud klíč chcete číst z BT služeb / tasků přes `GetOwnersBlackboard → GetValueAsX`, název klíče se předává **jako string**. Překlep v názvu tiše vrátí default. Používejte jednu pojmenovanou string konstantu, pokud to jde.
 
 ## Psaní nové BT služby
 
 Služby běží, dokud je jejich podstrom aktivní. Použijte je pro udržování odvozené představy (např. „je nositel viditelný") nebo pro levný polling.
 
-1. V Content Browseru pravý klik → **AI → Behavior Tree Service**.
+1. V Content Browseru pravý klik → **AI → Blueprint Class → BTService_BlueprintBase** a pojmenujte ve formátu BTS_<your_service>.
 2. Otevřete. Override `Event Receive Tick` (nebo `Event Receive Tick AI`, pokud chcete mít `Controlled Pawn` už zapojený).
-3. Z `GetOwnersBlackboard` zapisujte do klíče, který chcete aktualizovat. **Název klíče jako string** — `SetValueAsBool(KeyName="MyKey", Value=...)`.
+3. Z `GetBlackboard` vytáhněte `SetValueAsBool` (případně SetValueAsJinýDatovýTyp) a zapisujte do klíče, který chcete aktualizovat. Klíč vytáhněte a přidejte **`Make literal name`**, tam definujte klíč ve stringu.
 4. Položte službu na uzel v BT. Vylaďte tick interval (default 0.5 s s náhodnou odchylkou obvykle stačí).
 
 **Časté chyby:**
 
-- `GetOwnersBlackboard` funguje jen uvnitř BT uzlů. Nepoužívejte ho z controlleru.
-- Služba tikající 60× za sekundu skoro nikdy není potřeba. Používejte intervaly.
+- Nastavení klíče v `SetValueAsBool` není přes `Make Literal Name`.
+- Služba tikající 60× za sekundu skoro nikdy není potřeba. Používejte delší intervaly.
 - Pokud služba dělá line trace, preferujte Lyrovo `LineOfSightTo` před surovým `LineTraceByChannel` — už respektuje nastavení percepčních kanálů.
 - Nepoužívejte službu pro to, aby *něco dělala*. Služby aktualizují představy. Tasky dělají.
 
-## Psaní nové BT task
+## Psaní nové BT task - AI Generated, Not Tested
 
 Task je konkrétní akce: pohnout se někam, vystřelit, vyměnit zbraň, upustit vlajku, atd. Tasky uspějí, selžou, nebo zůstávají běžící (pro „in-progress" tasky).
 
@@ -49,9 +44,8 @@ Task je konkrétní akce: pohnout se někam, vystřelit, vyměnit zbraň, upusti
 
 Použijte [komentovaný příklad](05-Example-Elimination-Listener.md) jako šablonu. Souhrn pravidel:
 
-- Registrace v `BeginPlay → AsyncAction_ExperienceReady → OnReady`, ne v `OnPossess`.
-- V handleru identifikujte „self" přes `GetPlayerState` controlleru, ne pawnu.
-- Stínete `IsValid(BBComp)` před libovolným přístupem k blackboardu.
+- Zvažte jestli registrovat v `BeginPlay → AsyncAction_ExperienceReady → OnReady` nebo v `OnPossess`.
+- Pozor kdy se používá `GetPlayerState`, kdy `LyraCharacter`, kdy `Pawn` a kdy `AIController`.
 - Aktualizujte představy, ne chování. Nevolejte `MoveTo` z handleru zprávy.
 
 ## Tvorba vlastního controlleru
@@ -69,27 +63,23 @@ Co dostanete zdarma zděděním:
 - Kompletní `BeginPlay` životní cyklus: ExperienceReady gating, objevení podstavců vlajek a stávající listenery herních zpráv.
 - Handler `OnTargetPerceptionUpdated`, který zapisuje `TargetEnemy` na blackboard.
 - Tři listenery herních zpráv: vyzvednutí vlajky, doručení vlajky a eliminace (viz [05 — Listener eliminace](05-Example-Elimination-Listener.md)).
-- Vzor cachování `BBComp` a všechny per-life resety v `OnPossess`.
 
-### Krok 2 — Vytvořte vlastní Behavior Tree
+### Krok 2 - Vytvořte vlastní Blackboard
+
+1. Content Browser → pravý klik → **AI → Blackboard**. Pojmenujte `BB_<jmeno>_bot`.
+2. Nastavte hodnoty dle vzoru.
+
+### Krok 3 — Vytvořte vlastní Behavior Tree
 
 1. Content Browser → pravý klik → **AI → Behavior Tree**. Pojmenujte `BT_<jmeno>_bot`.
 2. V Details panelu BT nastavte **Blackboard Asset** na `BB_ISW_Bot`. Blackboard můžete rozšířit — viz „Přidání nového klíče na blackboard" výše.
 3. Stavějte strom. Dostupné jsou všechny existující typy uzlů (`BTS_CheckLOS`, `MoveTo`, Lyra shooting service).
 
-### Krok 3 — Override `OnPossess` pro spuštění vašeho stromu
+### Krok 4 — Override `OnPossess` pro spuštění vašeho stromu
 
-Overridujte `OnPossess` ve svém child Blueprintu. **Nejdříve zavolejte rodiče** (`Parent: On Possess`) — to spustí cachování BB a per-life resety klíčů. Pak zavolejte `RunBehaviorTree` s vaším stromem:
+1. V detailech AI Controlleru nastavte `BTAsset` na váš nový `BT_<jmeno>_bot`.
 
-```
-Event OnPossess (InPawn)
-  └── Parent: On Possess               ← cachuje BBComp, resetuje per-life klíče
-  └── RunBehaviorTree(BT_<jmeno>_bot)
-```
-
-**Nevolejte `UseBlackboard` znovu** — rodič ho už zavolal a `BBComp` je teď platný.
-
-### Krok 4 — Přidání nových listenerů herních zpráv
+### Krok 5 — Přidání nových listenerů herních zpráv
 
 Chcete-li reagovat na události, které baseline nezpracovává (např. vlastní reakce na smrt, event munice, týmové skórování), overridujte `BeginPlay` ve svém child Blueprintu:
 
@@ -98,7 +88,7 @@ Chcete-li reagovat na události, které baseline nezpracovává (např. vlastní
 
 Listenery rodiče zůstávají aktivní — přidáváte nové, ne je nahrazujete. Platí stejná pravidla: registrujte v `BeginPlay`, ne v `OnPossess`; stíněte `IsValid(BBComp)`; aktualizujte jen představy.
 
-### Krok 5 — Nasměrujte experience na váš controller
+### Krok 6 — Nasměrujte experience na váš controller
 
 1. Otevřete `Content/System/B_ShooterGame_CaptureTheFlag`.
 2. Najděte položku **Bot** a změňte **AI Controller Class** na váš `B_<jmeno>_AI`.
@@ -107,13 +97,14 @@ To je jediná změna potřebná k tomu, aby každý bot v experience používal 
 
 **Časté chyby specifické pro dědičnost:**
 
-- **Override `OnPossess` bez volání rodiče.** `BBComp` se nikdy nezachytí; každý zápis na blackboard ve vašem kódu tiše selže.
+- **Override `OnPossess` bez volání rodiče.**
 - **Override `BeginPlay` bez volání rodiče.** Tři stávající listenery se nezaregistrují. Handler eliminace nevyčistí `FlagCarrier`; BT bude donekonečna pronásledovat mrtvý pawn.
-- **Opětovné volání `UseBlackboard` ve vašem overridu.** Rodič ho už spustil. Opětovné volání nezmění korektnost, ale vytvoří druhý odkaz a je matoucí. Používejte zděděný `BBComp`.
+- **Opětovné volání `UseBlackboard` ve vašem overridu.** Rodič ho už spustil. Opětovné volání nezmění korektnost, ale vytvoří druhý odkaz a je matoucí.
+- **Nevidím BT, BB nebo Service:** Pravděpodobně jsou ve špatném adresáři. Zkontrolujte lokaci. Pokud nefunguje, zkuste je dát do adresáře `Bot`.
 
 ---
 
-## Kooperativní chování
+## Kooperativní chování - AI Generated, Not tested
 
 Pro projekty, které koordinují chování mezi boty (viz [Zadání B a G](07-Assignments.md)), se standardní přístupy mapují přímo na Kubíkovu Kapitolu 4.
 
@@ -144,41 +135,17 @@ Toto je vzor *stigmergie* / *reaktivní komunikace* [Kubík 2004, Kapitola 4.2.1
 
 ---
 
-## Začít od nuly (pokročilé)
-
-Pokud vaše zadání vyžaduje úplné odstranění BT a spuštění vlastní rozhodovací smyčky na `Tick`, implementaci GOAP planneru nebo InteRRaP vrstvené architektury (zadání G), podědíte `LyraPlayerBotController` přímo místo `B_ISW_AI`.
-
-Pro všechna ostatní zadání **dědíte od `B_ISW_AI`**.
-
-Pokud začínáte od nuly:
-
-- Ručně replikujte rozdělení fází: ExperienceReady pro statický setup, `OnPossess` pro per-life setup.
-- Ručně registrujte listenery herních zpráv v `BeginPlay`, ne v `OnPossess`.
-- Zapojte `AIPerceptionComponent` sami, pokud potřebujete zrak/sluch.
-- Nastavte `Default Pawn Class` v experience na Lyra postavu s vybavením, které potřebujete.
-- Nasměrujte experience na vaši třídu controlleru (stejně jako Krok 5 výše).
-
 ## Reference častých chyb
 
-Všechny jsou v paměti `ctf_ai_lessons`, ale stojí za zopakování na jednom místě:
-
-- **`GetBlackboard()` vrací None před `RunBehaviorTree`.** Cachujte output `UseBlackboard`.
+- **`GetBlackboard()` nefunguje**, použijte `GetBlackboard()` místo toho a případně nastavte target.
+- **`GetBlackboard()` vrací None před `RunBehaviorTree`.** Použijte `UseBlackboard` a manuálně přepište používaný Blackboard.
 - **`FindTeamFromObject` vrací -1, pokud pawn ještě není zařazen do týmu.** Stínete `bIsPartOfTeam`. Pokud false, `Delay 0.1` a zkuste znovu.
 - **`AsyncAction_ExperienceReady` se spustí jednou za load experience, ne jednou za spawn.** Pro statická data. Per-life setup patří do `OnPossess`.
-- **Lyra Shooting Service je sdílená a křehká.** Neupravujte ji. Bránětete ji rodičovskými rozhodnutími.
-- **Observer Aborts uvnitř background větve Simple Parallelu jsou nespolehlivé.** Dejte aborting dekorátory na Selector *nad* Simple Parallel.
-- **`B_CaptureTheFlagScoring.GetFlagPadByTeam` má race.** Iterujte `GetAllActorsOfClass(B_GrantFlagPad)` přímo.
+- **`B_CaptureTheFlagScoring.GetFlagPadByTeam` má chybu.** Iterujte `GetAllActorsOfClass(B_GrantFlagPad)` přímo.
 - **`_FlagTeamIndex` uvnitř `B_GrantFlagPad.GrantOrDeliverFlag` je lokální proměnná.** Použijte class-level `PadTeamIndex`.
 - **Listener registrovaný v `OnPossess` se duplikuje per život.** Registrujte jednou v `BeginPlay`.
 - **`GetControlledPawn → GetPlayerState` uvnitř handleru eliminace může vrátit None.** Použijte vlastní `GetPlayerState` controlleru.
 
 ## Ladící postup, který vám ušetří hodiny
 
-Když agent dělá špatnou věc, otázka je skoro vždy „čemu v tom okamžiku věřil?". Nejrychlejší cesta k odpovědi:
-
-1. Dejte breakpoint na BT uzel, který vystřelil (pravý klik → Add Breakpoint).
-2. Když PIE zastaví, otevřete **Gameplay Debugger** a snapshot blackboardu.
-3. Porovnejte s tím, co *si myslíte*, že mělo být true. Najděte klíč, který nesouhlasí s realitou.
-4. Trasujte zpět: co bylo poslední, co do toho klíče zapsalo? Bylo to vůbec zavoláno? Bylo to zavoláno se správnou hodnotou?
-
-To je stejný cyklus, který byste běhali v libovolném debuggeru — jediný zvrat je, že „stav" žije na blackboardu místo v lokálních proměnných. Berte blackboard inspector jako svoje watch okno.
+Když agent dělá špatnou věc, otázka je skoro vždy „čemu v tom okamžiku věřil?". Použijte Visual Logger: **Tools → Debug → Visual Logger**, spusťte hru a spusťte logger. V čase pak můžete vidět aktuální stav AI Controlleru a například jeho BB values.

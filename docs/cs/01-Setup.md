@@ -65,6 +65,5 @@ Pokud gameplay debugger ukazuje naplněný blackboard a boti se pohybují, pron�
 ## 8. Co když něco nefunguje
 
 - **Plugin se neobjeví v okně Plugins.** Zkontrolujte, že soubor `.uplugin` je přímo v `Plugins/GameFeatures/ShooterCTF/`, ne o úroveň níž.
-- **Editor padá při aktivaci.** Téměř jistě jste na špatné verzi enginu. V logu hledejte dialog "Module not compatible".
-- **Zápas startuje, ale neobjeví se boti.** Otevřete experience asset a ověřte, že odkazuje na platný spawner; firing range mapa má explicitní spawnovací volume.
+- **Editor padá při aktivaci.** Pravděpodobně máte špatnou verzi enginu. Potřebujete verzi 5.5+ (testováno na verzi 5.7.4)
 - **Boti se objeví, ale nic nedělají.** Controller možná selhal při spouštění BT. Otevřete gameplay debugger (`'`) a koukněte na BB bota — pokud je prázdný, čtěte sekci o životním cyklu v [03 — Architektura AI](03-AI-Architecture.md).

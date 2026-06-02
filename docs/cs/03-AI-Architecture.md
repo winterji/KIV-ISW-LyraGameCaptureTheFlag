@@ -1,6 +1,6 @@
 # 03 — Architektura AI
 
-Tento dokument mapuje pojmy z knihy **Kubík, A. — *Inteligentní agenty*** na konkrétní stack Lyra / Unreal AI, ve kterém budete pracovat. Pokud rozumíte oběma stranám tohoto mapování, zbytek dokumentace půjde sám.
+Tento dokument mapuje pojmy z knihy **Kubík, A. — *Inteligentní agenty*** na konkrétní stack Lyra / Unreal AI, ve kterém budete pracovat. Pokud rozumíte oběma stranám tohoto mapování, zbytek dokumentace půjde samo.
 
 ## 3.1 Kubíkova definice agenta
 
@@ -47,7 +47,7 @@ V kódu má náš agent přesně tento tvar:
 | `změna_stavu`    | Cokoliv, co zapisuje na Blackboard — handlery eventů na controlleru, BT služby, dekorátory. |
 | `akce`           | Rozhodnutí Behavior Tree, který listový task spustit.                         |
 | `A`              | BT tasky: `MoveTo`, Lyra shooting service, vlastní tasky, které napíšete.   |
-| `C`              | Implicitně. Náš reaktivní baseline žádné explicitní `C` nemá; jeho zavedení je jedním ze zadání v [07 — Zadání projektů](07-Assignments.md). |
+| `C`              | Implicitně. Náš reaktivní baseline žádné explicitní `C` nemá. Hraje do konce. |
 
 ## 3.3 Čtyři typy architektur
 
@@ -56,7 +56,7 @@ Kniha dělí agenty do čtyř architektur. Umístit svou práci na této mapě j
 | Architektura      | Reference v knize | Definující vlastnost                                                       | Příklad v hrách                                                  |
 | ----------------- | ----------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | **Reaktivní**     | Kapitola 1                | Bez vnitřního modelu světa. Akce je funkcí aktuálního vjemu (a případně malého bufferu). | Quake bot s reflexní střelbou a malým stavovým automatem.        |
-| **Deliberativní (uvažující)** | Kapitola 2 | Symbolické reprezentace světa; plány vedoucí k cílům.                       | RTS bot, který hledá cestu, řadí produkci, řadí cíle podle utility. |
+| **Deliberativní (uvažující)** | Kapitola 2 | Symbolické reprezentace světa; plány vedoucí k cílům. Možná kombinace s teorií BDI. | RTS bot, který hledá cestu, řadí produkci, řadí cíle podle utility. |
 | **Sociální**      | Kapitoly 3.1 a 4          | Komunikuje s ostatními agenty ve vyšším komunikačním jazyce.                | Koordinovaný CTF tým, který si vyměňuje přidělení rolí.          |
 | **Hybridní**      | Kapitola 3.2  | Vrstvená kombinace výše uvedených.                                          | Dodávaný `B_ISW_AI` je nejblíže sem — reaktivní v listech, ale s symbolickou bází představ. |
 
@@ -74,19 +74,17 @@ Duchem je blízký *uvažujícímu agentu na bázi reaktivity* / robotu Toto z K
 
 Je lákavé číst BT skrz BDI optiku — a toto čtení je z velké části platné. Baseline má všechny tři BDI kategorie přítomné:
 
-- **Představy (Bel)** — **explicitně** v Blackboardu. Každý BB klíč je `Bel(self, φ)` pro nějakou propozici φ.
-- **Touhy / Cíle (Goal)** — **implicitně** v dekorátorech jednotlivých podstromů. `[OurFlagCaptured == true]` se čte jako `Goal(self, FlagRecovered)`; `[CarryingFlag == true]` jako `Goal(self, FlagDelivered)`. Observer Aborts aktivuje ten cíl, jehož aktivační podmínka se právě splnila.
-- **Záměry (Int)** — **implicitně** jako aktuálně aktivní cesta v podstromě. Stejný mechanismus Observer Aborts funguje jako Bratmanovo přehodnocování záměrů: závazek, který se stáhne v okamžiku, kdy jeho aktivační podmínka přestane platit.
+- **Představy (Belief)** — **explicitně** v Blackboardu. Každý BB klíč je pro nějakou představu o světě.
+- **Touhy / Cíle (Desire)** — **implicitně** v dekorátorech jednotlivých podstromů. `[OurFlagCaptured == true]` se čte jako `Goal(self, FlagRecovered)`; `[CarryingFlag == true]` jako `Goal(self, FlagDelivered)`. Observer Aborts aktivuje ten cíl, jehož aktivační podmínka se právě splnila.
+- **Záměry (Intention)** — **implicitně** jako aktuálně aktivní cesta v podstromě. Stejný mechanismus Observer Aborts funguje jako Bratmanovo přehodnocování záměrů: závazek, který se stáhne v okamžiku, kdy jeho aktivační podmínka přestane platit.
 
-V uvolněném smyslu běžném v herní AI tedy baseline **BDI-inspirovaný je**.
+V uvolněném smyslu běžném v herním AI tedy baseline je **BDI-inspired**.
 
-Od přísné Kubíkovy BDI architektury (Kapitoly 2.8.3, 2.9 a 2.10) se liší ve třech konkrétních bodech:
+Od Kubíkovy BDI architektury (Kapitoly 2.8.3, 2.9 a 2.10) se liší ve třech konkrétních bodech:
 
 1. **Žádná prvotřídní data pro touhy a záměry.** V architektuře IRMA (Obr. 2.8, s. 56) jsou představy, touhy, záměry a plány *čtyři odděleně uložené báze poznatků*, ze kterých deliberativní cyklus čte a do kterých zapisuje. V baseline žijí touhy a záměry v topologii BT — viditelné v editoru a v Gameplay Debuggeru, ale nedotazovatelné jako runtime data, neměnitelné zvenčí a nepřenositelné jinému agentovi.
 2. **Žádný deliberativní cyklus.** Kanonická BDI smyčka (s. 54) je `events ← percept() → bel ← belrev() → goal ← options() → int ← filter() → pl ← plan() → execute()`. BT dělá `vnímání → průchod stromem podle priorit → vykonání`. Chybějící části jsou explicitní výčet voleb (`options()`) a filtrovací mechanismy z IRMA — `filter kompatibility`, `analyzátor příležitostí`, `filter override mechanism` (Kapitola 2.10).
 3. **Žádná knihovna plánů ani generování plánů.** Podstromy jsou napevno zakódované exekuční politiky, ne `knihovna plánů` indexovaná cílem, kterou by agent mohl prohledávat.
-
-Pokud chcete architekturu posunout k vlastní BDI v Kubíkově smyslu, projekt E v [07 — Zadání projektů](07-Assignments.md#e-deliberativni-agent-rizeny-cili-) je přesně tohle cvičení: povýšit `CurrentGoal` a `CurrentIntention` na prvotřídní BB klíče, naimplementovat `BTT_SelectGoal`, který provádí krok `options() → filter()`, a z něj dispečerovat správný podstrom. To je nejmenší změna, která systém činí popsatelný jako BDI v termínech IRMY.
 
 ## 3.4 Mapování na pojmy UE5 / Lyra
 
@@ -95,7 +93,7 @@ Pokud chcete architekturu posunout k vlastní BDI v Kubíkově smyslu, projekt E
 | **Tělo / aktuátory**                              | `Character` Blueprint ovládaný AI — mesh, animace, fyzika, zbraň.                                                             |
 | **Senzory**                                       | `AIPerceptionComponent` (zrak, sluch, damage) na AI Controlleru. Vlastní BT služby, které se ptají světa, taky.               |
 | **Vnitřní stav `I`**                              | **Blackboard** (`BB_ISW_Bot`).                                                                                                |
-| **Funkce vjemu (`vjem`)**                         | `OnTargetPerceptionUpdated` + handlery herních zpráv v blueprintu `B_ISW_AI`. Oba zapisují na Blackboard.                                             |
+| **Funkce vjemu (`vjem`)**                         | `AIPerception` + herní zprávy generované serverem.                                             |
 | **Funkce změny stavu (`změna_stavu`)**            | BT služby (např. `BTS_CheckLOS`) a handlery zpráv — cokoliv, co odvozuje představy z surových vjemů.                          |
 | **Funkce výběru akce (`akce`)**                   | **Behavior Tree** (`BT_ISW_CTF_bot`). Každý tick projde strom a vybere aktivní list.                                          |
 | **Akční potenciál (`A`)**                         | BT tasky: `MoveTo`, Lyra shooting service, cokoliv co naimplementujete.                                                       |
@@ -117,7 +115,7 @@ Brooksova **subsumpční architektura** popisuje, co Behavior Tree v praxi děl�
 
 Mechanismus, který Brooks nazval **potlačení a zabránění** mezi vrstvami, je přesně to, co dělají BT dekorátory s *Observer Aborts: Lower Priority* v našem stromě: podstrom s vyšší prioritou (návrat vlajky) potlačuje nižší (krádež), když je jeho aktivační podmínka splněna. U Brookse to bylo zapojeno explicitními signálovými odbočkami; v BT je to zapojeno dekorátorem a Observer Aborts.
 
-Co model BT (podobně jako čistá subsumpce) **nedává**, je **explicitní plánování ke cíli**. To je doménou deliberativních agentů a konkrétně BDI architektur. Pokud vaše zadání vyžaduje plánování, opouštíte čistý BT — viz [07 — Zadání, projekt E](07-Assignments.md#e-deliberativni-agent-rizeny-cili-).
+Baseline agent nepoužívá deliberativní architekturu s BDI, ale je pouze BDI-inspired a chová se reaktivně s vnitřní symbolickou reprezentací světa.
 
 ## 3.6 Životní cyklus controlleru
 
@@ -127,12 +125,11 @@ Tři relevantní fáze:
 
 ### Fáze A — `BeginPlay` a Experience-ready
 
-`BeginPlay` se spustí na controlleru jednou, velmi brzy. Lyra má navíc asynchronní krok loadování **Experience** — game features (jako ShooterCTF) nemusí být registrovány v okamžiku `BeginPlay`. Proto čekejte uzlem `AsyncAction_ExperienceReady → OnReady`.
+`BeginPlay` se spustí na controlleru jednou, velmi brzy. Lyra má navíc asynchronní krok loadování **Experience** — game features (jako ShooterCTF) nemusí být registrovány v okamžiku `BeginPlay`. Proto čekejte uzlem `AsyncAction_ExperienceReady → OnReady`. Když oddědíte od **`B_ISW_AI`** a přímo za `Event BeginPlay` napojíte `Parent BeginPlay`, bude to čekat na ExperienceReady a na tom můžete stavět dál.
 
-Tuto fázi použijte pro:
+![begin_play](../img/begin_play.png)
 
-- Jednorázový statický setup (nalezení podstavců vlajek, naplnění `OwnFlagBaseLocation` / `EnemyFlagBaseLocation`).
-- Registraci listenerů herních zpráv, které mají přežít respawny.
+Tuto fázi použijte pro registraci listenerů herních zpráv, které mají přežít respawny.
 
 **Nepoužívejte** tuto fázi pro:
 
@@ -153,19 +150,21 @@ Tuto fázi použijte pro:
 
 > Z `UseBlackboard` táhněte drát z `return` pinu, povýšte na proměnnou, nazvěte `BBComp`. Všude dál používejte `BBComp → SetValueAsBool(...)`. Validujte pomocí `IsValid(BBComp)`.
 
+<!-- AI generated, not tested
+
 ### Fáze C — Runtime události
 
 Herní zprávy, percepční události, anim notify, atd. běží na controlleru, protože jste je tam zaregistrovali ve fázi A. Uvnitř handleru:
 
 - Identitu AI čtěte přes **vlastní** `GetPlayerState` controlleru, ne přes `GetControlledPawn → GetPlayerState`. Pawn už může být `None`.
 - Pro všechny čtení/zápisy blackboardu používejte cachovanou `BBComp`.
-- Handlery držte malé. Aktualizují **bázi představ** (blackboard `I`); nechte BT zareagovat na změnu na příštím ticku. **Nevolejte `MoveTo` ani střelbu z handleru zprávy.** Přesně tohle odpovídá Kubíkovu oddělení `změna_stavu` (handlery aktualizují `I`) od `akce` (strom rozhoduje, co dělat).
+- Handlery držte malé. Aktualizují **bázi představ** (blackboard `I`); nechte BT zareagovat na změnu na příštím ticku. **Nevolejte `MoveTo` ani střelbu z handleru zprávy.** Přesně tohle odpovídá Kubíkovu oddělení `změna_stavu` (handlery aktualizují `I`) od `akce` (strom rozhoduje, co dělat). -->
 
 ## 3.7 Tři druhy vjemů
 
 V tomto projektu vedle sebe žijí tři druhy „percepce" — a všechny zaplňují tutéž funkci `vjem` z Kubíkova formálního modelu. V praxi je používejte záměrně:
 
-1. **Lyra `AIPerceptionComponent`** — kužely zraku a sluchu nastavené na controlleru. Vystřeluje `OnTargetPerceptionUpdated`. Toto plní `TargetEnemy`. Realistické, ztrátové, šumové.
+1. **Lyra `AIPerceptionComponent`** — kužely zraku a sluchu nastavené na controlleru. Vystřeluje `OnTargetPerceptionUpdated`. Toto plní `TargetEnemy`.
 2. **Služby behavior tree** — malé Blueprint skripty, které tikají, dokud je jejich podstrom aktivní. `BTS_CheckLOS` se ptá `LineOfSightTo(FlagCarrier)` a zapisuje výsledek. Analogie s Brooksovými **kompetenčními moduly**.
 3. **Naslouchání herních zpráv** — publish/subscribe události vysílané hrou (`Lyra.CaptureTheFlag.FlagPickedUp.Message`, …). „Percepční" jsou ve smyslu, který Kubík používá v Kapitole 4.2.1 při diskusi **reaktivní komunikace** / **stigmergie**: agenti čtou stopy v prostředí místo aby přímo pozorovali ostatní. Herní zprávy jsou o stupínek vyšší forma téhož: explicitní broadcast místo implicitní stopy.
 
