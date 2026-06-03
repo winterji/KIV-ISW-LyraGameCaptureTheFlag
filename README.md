@@ -1,5 +1,7 @@
 # Welcome to Lyra Capture the Flag Game Mode with enhanced AI agents!
 
+This plugin was created as course material for semestral work for course KIV/ISW at University of West Bohemia.
+
 ![Lyra Start Game Capture the Flag](https://i.imgur.com/5UdE4Ah.png)
 
 Unreal Engine 5 comes with a new feature called [Game Features Plugins](https://dev.epicgames.com/documentation/unreal-engine/game-features-and-modular-gameplay-in-unreal-engine) allowing for modular and standalone game content. The [Lyra Starter game](https://www.unrealengine.com/marketplace/en-US/product/lyra) already uses this feature extensively to create modular game modes such as the Control point and the Team deathmatch.
@@ -23,7 +25,17 @@ This repository builds on existing CTF game mode and enhances AI agents with CTF
 ![Activate the plugin](https://i.imgur.com/NfcOLTk.png)
 
 - Restart the Editor, and the Game mode should be activated automatically
-## Roadmap
+
+## Documentation
+
+In the */docs* folder is documentation with main [Readme](./docs/README.md) that offers quick overview of the whole documentation. In the */docs/cs* is the same documentation but in Czech language.
+
+## Possible Future Development
 
 There are some missing features that are not implemented yet.
-- Players carrying the flag should drop the flag in place after dying
+- Players carrying the flag should drop the flag in place after dying.
+- Improve the map so it is bigger and can possibly host 3 teams - update of the AI controller is also necessary in this case.
+
+## Author
+
+Previous student of the KIV/ISW course in 2025/26 - Jiří Winter.

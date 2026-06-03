@@ -46,11 +46,11 @@ Your task will be to **design and implement at least one non-trivial AI behavior
 
 ## Further available materials
 
-| Description | URL |
-| ----------- | ---- |
-| Lyra Sample Game documentation | https://dev.epicgames.com/documentation/unreal-engine/lyra-sample-game-in-unreal-engine |
-| YT — overview of the default AI controller in Lyra | https://www.youtube.com/watch?v=jZFgTEGRJxg |
-| UE5 docs — AI controller | https://dev.epicgames.com/documentation/unreal-engine/behavior-tree-in-unreal-engine---quick-start-guide |
+| Description | URL | Usefulness |
+| ----- | ---- | --- |
+| UE5 docs - AI controller (explanation of BT, BB, Service, Task,...) | https://dev.epicgames.com/documentation/unreal-engine/behavior-tree-in-unreal-engine---quick-start-guide | Very high
+| YT - overview of the default AI controller in Lyra | https://www.youtube.com/watch?v=jZFgTEGRJxg | Medium
+| Lyra Sample Game documentation | https://dev.epicgames.com/documentation/unreal-engine/lyra-sample-game-in-unreal-engine | Low
 
 ## Conventions used in this documentation
 

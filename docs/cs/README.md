@@ -46,11 +46,11 @@ Vaším úkolem bude **navrhnout a implementovat alespoň jedno netriviální ch
 
 ## Další dostupné materiály
 
-| Popis | Url |
-| ----- | ---- |
-| Dokumentace Lyra Sample Game | https://dev.epicgames.com/documentation/unreal-engine/lyra-sample-game-in-unreal-engine
-| YT - popis default AI controlleru v Lyra | https://www.youtube.com/watch?v=jZFgTEGRJxg
-| UE5 docs - AI controller | https://dev.epicgames.com/documentation/unreal-engine/behavior-tree-in-unreal-engine---quick-start-guide
+| Popis | Url | Míra užitečnosti |
+| ----- | ---- | --- |
+| UE5 docs - AI controller (vysvětlení BT, BB, Service, Task,...) | https://dev.epicgames.com/documentation/unreal-engine/behavior-tree-in-unreal-engine---quick-start-guide | Velmi Vysoká
+| YT - popis default AI controlleru v Lyra | https://www.youtube.com/watch?v=jZFgTEGRJxg | Střední
+| Dokumentace Lyra Sample Game | https://dev.epicgames.com/documentation/unreal-engine/lyra-sample-game-in-unreal-engine | Nižší
 
 ## Konvence použité v dokumentaci
 
